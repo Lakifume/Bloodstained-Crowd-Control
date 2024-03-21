@@ -16,7 +16,7 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 | Refill Magic         | Refill player MP to full                                                                                          | 125   | ---      | -        |
 | Shuffle Colors       | Randomize Miriam's colors                                                                                         | 50    | ---      | -        |
 | Fake Flawless Win    | Congratulations                                                                                                   | 50    | ---      | -        |
-| Playe  Death Quote   | Randomly play one of the quotes normally heard when getting a Game Over on certain bosses                         | 50    | ---      | -        |
+| Play Death Quote     | Randomly play one of the quotes normally heard when getting a Game Over on certain bosses                         | 50    | ---      | -        |
 | Flip Player          | Turn the player around, also inverting their controls                                                             | 150   | 30s      | -        |
 | Shuffle Controls     | Randomize all non-directional player controls. Does not affect keyboard inputs                                    | 250   | 30s      | -        |
 | Use Witch Time       | Trigger an ancient technique once used by the Umbra                                                               | 250   | 15s      | 0        |
