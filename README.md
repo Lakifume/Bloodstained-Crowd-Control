@@ -5,8 +5,8 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 
 | Name                 | Description                                                                                                       | Price | Duration | Group ID |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------- | ----: | -------: | -------: |
-| Poison Player        | TestText                                                                                                          | 50    | ---      | -        |
-| CursePlayer          | TestText                                                                                                          | 50    | ---      | -        |
+| Poison Player        | Unlike the old school poison this one actually drains your health                                                 | 50    | ---      | -        |
+| Curse Player         | Their run is probably cursed enough as is, but a little extra never hurt anyone                                   | 50    | ---      | -        |
 | Petrify Player       | Remind the player why they should never get stoned                                                                | 50    | ---      | -        |
 | Slow Player Down     | Who are you calling slow ?                                                                                        | 50    | ---      | -        |
 | Use Waystone         | Send the player back to Johannes for a health check-up. Still has no effect during boss fights                    | 500   | ---      | -        |
@@ -19,7 +19,7 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 | Player Death Quote   | Randomly play one of the quotes normally heard when getting a Game Over on certain bosses                         | 50    | ---      | -        |
 | Flip Player          | Turn the player around, also inverting their controls                                                             | 150   | 30s      | -        |
 | Shuffle Controls     | Randomize all non-directional player controls. Does not affect keyboard inputs                                    | 250   | 30s      | -        |
-| Use Witch Time       | TestText                                                                                                          | 250   | 15s      | 0        |
+| Use Witch Time       | Trigger an ancient technique once used by the Umbra                                                               | 250   | 15s      | 0        |
 | Turbo Enemies        | They move so fast !                                                                                               | 250   | 30s      | 0        |
 | Uncontrollable Speed | The more speed the better… right ?                                                                                | 200   | 30s      | -        |
 | Critical Mode        | Every player attack is a guaranteed crit, however defense will be set to 0                                        | 150   | 30s      | -        |
@@ -29,7 +29,7 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 | Rewind Time          | Warp the player back to the last room they've traversed. Does not work during boss fights                         | 250   | ---      | -        |
 | Summon Rave          | It's party time at the demon castle !                                                                             | 100   | 30s      | 1        |
 | Summon Darkness      | Follow the light at the end of the tunnel                                                                         | 100   | 20s      | 1        |
-| Trigger Earthquake   | TestText                                                                                                          | 100   | 10s      | -        |
+| Trigger Earthquake   | Shakin' and vibin'                                                                                                | 100   | 10s      | -        |
 | Force Invert         | Force the player to remain in second castle                                                                       | 200   | 20s      | -        |
 | No Skill Shards      | Turn off all white shards. Epic gamers can use their own skillz                                                   | 200   | 30s      | -        |
 | Weapons Only         | Unequip the player's current shards, forcing them to use weapons instead                                          | 100   | 60s      | 2        |
