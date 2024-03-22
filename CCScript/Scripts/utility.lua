@@ -1,5 +1,8 @@
-UEHelpers = require("UEHelpers")
+local UEHelpers = require("UEHelpers")
 
+nullName = FName("None")
+mathLibrary = UEHelpers:GetKismetMathLibrary(false)
+gameplayStatics = UEHelpers:GetGameplayStatics(false)
 gameInstance = FindFirstOf("PBGameInstance")
 utilityClass = StaticFindObject("/Script/ProjectBlood.PBUtility")
 utility = StaticConstructObject(utilityClass, gameInstance, 0, 0, 0, nil, false, false, nil)
@@ -8,19 +11,16 @@ eventUtility = StaticConstructObject(eventUtilityClass, gameInstance, 0, 0, 0, n
 datatableUtilityClass = StaticFindObject("/Script/Engine.DataTableFunctionLibrary")
 datatableUtility = StaticConstructObject(datatableUtilityClass, gameInstance, 0, 0, 0, nil, false, false, nil)
 assetRegistryHelpers = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
-nullName = FName("None")
-gameplayStatics = UEHelpers:GetGameplayStatics(false)
-mathLibrary = UEHelpers:GetKismetMathLibrary(false)
 
 function GetPlayerCharacter()
     return gameInstance:GetPlayerCharacter(0)
 end
 
+-- Update current room info for every room change
 previousRoom = nullName
 currentRoom = nullName
-local tempRoom = nullName
 RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
-    tempRoom = gameInstance.pRoomManager:GetCurrentRoomId()
+    local tempRoom = gameInstance.pRoomManager:GetCurrentRoomId()
 	if currentRoom ~= tempRoom then
 		previousRoom = currentRoom
 		currentRoom = tempRoom
@@ -44,7 +44,7 @@ end
 function GetCurrentRoomOffsets()
     local player = GetPlayerCharacter()
 	local playerLocation = player:K2_GetActorLocation()
-	return playerLocation.X // 1260.0, playerLocation.Z // 720.0
+	return playerLocation.X//1260.0, playerLocation.Z//720.0
 end
 
 function GetCurrentRoomProperties()
@@ -55,11 +55,11 @@ function GetCurrentRoomProperties()
 end
 
 function GetCharacterHealthRatio(character)
-	return character.CharacterStatus.HitPoint / character.CharacterStatus:GetMaxHitPoint()
+	return character.CharacterStatus.HitPoint/character.CharacterStatus:GetMaxHitPoint()
 end
 
 function SpawnActorFromClass(classPath, location, rotation)
-    local actorClass = StaticFindObject(classPath)
+    local actorClass = FindValidActorClass(classPath)
     local world = UEHelpers:GetWorld()
     return world:SpawnActor(actorClass, location, rotation)
 end
@@ -67,6 +67,25 @@ end
 function FindValidActorClass(classPath)
 	local assetData = {["ObjectPath"] = FName(classPath)}
 	return assetRegistryHelpers:GetAsset(assetData)
+end
+
+function SetPlayerInputEnabled(flag)
+	local playerController = UEHelpers.GetPlayerController()
+	local controllerID = flag and 0 or 1
+	gameplayStatics:SetPlayerControllerID(playerController, controllerID)
+end
+
+function ClampValue(value, minimum, maximum)
+	return math.min(math.max(minimum, value), maximum)
+end
+
+function IsInList(list, element)
+    for index = 1,#list,1 do
+        if (list[index] == value) then
+            return true
+        end
+    end
+    return false
 end
 
 function RandomChoice(list)
