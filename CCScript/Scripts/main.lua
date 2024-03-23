@@ -3,65 +3,91 @@ print("Loading CC script")
 require("utility")
 require("constant")
 
+local timeDilationActive = false
+local postProcessActive = false
+local equipmentChangeActive = false
+local orlokStandbyActive = false
+
+function IsGameReady()
+    local player = GetPlayerCharacter()
+	if not player:IsValid() then return false end
+	if not IsInList({1, 6, 9}, gameInstance:GetGameModeType()) then return false end
+	if gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then return false end
+	return true
+end
+
 function PoisonPlayer()
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("Poison"))
+	return true
 end
 
 function CursePlayer()
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("Curse"))
+	return true
 end
 
 function PetrifyPlayer()
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("Stone"))
+	return true
 end
 
 function SlowPlayerDown()
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("Slow"))
+	return true
 end
 
 function UseWaystone()
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("WayStone"))
+	return true
 end
 
 function EmptyHealth()
     local player = GetPlayerCharacter()
     player.CharacterStatus:SetHitPointForce(1.0)
+	return true
 end
 
 function EmptyMagic()
     local player = GetPlayerCharacter()
     player.CharacterStatus:SetMagicPointForce(1.0)
+	return true
 end
 
 function RefillHealth()
     local player = GetPlayerCharacter()
     player.CharacterStatus:RecoverHitPoint()
+	return true
 end
 
 function RefillMagic()
     local player = GetPlayerCharacter()
     player.CharacterStatus:RecoverMagicPoint()
+	return true
 end
 
 function ShuffleColors()
     local player = GetPlayerCharacter()
-    for index = 1,6,1 do
-        for subindex = 0,2,1 do
-            player:SetChromaWheelColorScheme(index, {R=math.random(), G=math.random(), B=math.random()}, subindex, false, false, false)
-        end
-    end
-    player:SetChromaWheelTrim(3, math.random(1, 36), false, false)
-    gameInstance.m_SystemSettings:SetBloodColor(math.random(0, 11))
+	ExecuteInGameThread(function()
+		for index = 1,6,1 do
+			for subindex = 0,2,1 do
+				player:SetChromaWheelColorScheme(index, {R=math.random(), G=math.random(), B=math.random()}, subindex, false, false, false)
+			end
+		end
+		player:SetChromaWheelTrim(3, math.random(1, 36), false, false)
+		gameInstance.m_SystemSettings:SetBloodColor(math.random(0, 11))
+	end)
+	return true
 end
 
 function FakeFlawlessWin()
     local player = GetPlayerCharacter()
 	player.Step:NoticeBossBattleNoDamageWin(nullName)
+	return true
 end
 
 function PlayDeathQuote()
@@ -71,6 +97,7 @@ function PlayDeathQuote()
 	-- Character voices don't play unless their sound group is loaded
 	gameInstance.pSoundManager:GroupLoad("VOICE", string.sub(chosenVoice, 4, 8))
 	gameInstance.pSoundManager:PlaySEForBP(FName(chosenVoice), player)
+	return true
 end
 
 function FlipPlayer(duration)
@@ -83,6 +110,7 @@ function FlipPlayer(duration)
         utility:SetLeftAnalogMirrorFlag(false)
 		UnregisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", preId, postId)
     end)
+	return true
 end
 
 function ShuffleControls(duration)
@@ -132,9 +160,12 @@ function ShuffleControls(duration)
         end
         UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
     end)
+	return true
 end
 
 function UseWitchTime(duration)
+	if timeDilationActive then return false end
+	timeDilationActive = true
     local rate = 0.25
     local player = GetPlayerCharacter()
     utility:PBCategorySlomo(1, 0, rate, player)
@@ -143,27 +174,35 @@ function UseWitchTime(duration)
     utility:PBCategorySlomo(4, 0, rate, player)
     utility:PBActorSlomo(player, 0, 1.0)
     ExecuteWithDelay(math.floor(duration*1000), function()
-        if player:IsValid() then RestoreTimeDilation() end
+        if player:IsValid() then utility:PBCategorySlomo(7, 0, 1.0, player) end
+		timeDilationActive = false
     end)
+	return true
 end
 
 function TurboEnemies(duration)
+	if timeDilationActive then return false end
+	timeDilationActive = true
     local rate = 2.0
     local player = GetPlayerCharacter()
     utility:PBCategorySlomo(1, 0, rate, player)
     utility:PBActorSlomo(player, 0, 1.0)
     ExecuteWithDelay(math.floor(duration*1000), function()
-        if player:IsValid() then RestoreTimeDilation() end
+        if player:IsValid() then utility:PBCategorySlomo(7, 0, 1.0, player) end
+		timeDilationActive = false
     end)
+	return true
 end
 
 function UncontrollableSpeed(duration)
     ModifyEquipSpecialAttribute({15, 16, 22}, 4.0, true, duration)
+	return true
 end
 
 function CriticalMode(duration)
     ModifyEquipSpecialAttribute({8}, 999.0, false, duration)
     ModifyEquipSpecialAttribute({107, 108}, -999.0, false, duration)
+	return true
 end
 
 function GoldRush(duration)
@@ -176,30 +215,35 @@ function GoldRush(duration)
 		gameInstance:AddTotalCoin(-100)
 		return timer >= duration or not player:IsValid()
 	end)
+	return true
 end
 
 function UseRosario()
     local player = GetPlayerCharacter()
 	local actorInstances = FindAllOf("PBBaseCharacter")
-	for index = 1,#actorInstances,1 do
-		local actor = actorInstances[index]
-		if actor:IsValid() then
-			if actor:IsBoss() then
-				actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.1))
-			elseif actor:IsEnemy() then 
-				actor:DirectDamage(actor.CharacterStatus.HitPoint)
+	ExecuteInGameThread(function()
+		for index = 1,#actorInstances,1 do
+			local actor = actorInstances[index]
+			if actor:IsValid() then
+				if actor:IsBoss() then
+					actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.1))
+				elseif actor:IsEnemy() then 
+					actor:DirectDamage(actor.CharacterStatus.HitPoint)
+				end
 			end
 		end
-	end
+	end)
+	return true
 end
 
 function SummonAmbush()
-	if not IsInList(rotatingRooms, currentRoom:ToString()) then
-		local player = GetPlayerCharacter()
-		local playerLocation = player:K2_GetActorLocation()
-		local chosenEnemy = RandomChoice(enemylist)
-		local enemyLevel = math.floor(gameInstance.pMapManager:GetRoomTraverseRate({})/2)
-		print("Spawned enemy: " .. chosenEnemy)
+	if IsInList(rotatingRooms, currentRoom:ToString()) then return false end
+	local player = GetPlayerCharacter()
+	local playerLocation = player:K2_GetActorLocation()
+	local chosenEnemy = RandomChoice(enemylist)
+	local enemyLevel = math.floor(gameInstance.pMapManager:GetRoomTraverseRate({})/2)
+	print("Spawned enemy: " .. chosenEnemy)
+	ExecuteInGameThread(function()
 		local enemy1 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
 		local enemy2 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
 		enemy1:SetCharacterWorldRotation(180.0, 0.0)
@@ -207,16 +251,21 @@ function SummonAmbush()
 		enemy1.CharacterStatus:RecoverHitPoint()
 		enemy2:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
 		enemy2.CharacterStatus:RecoverHitPoint()
-	end
+	end)
+	return true
 end
 
 function RewindTime()
-	if not IsInList(rotatingRooms, previousRoom:ToString()) then
+	if IsInList(rotatingRooms, previousRoom:ToString()) then return false end
+	ExecuteInGameThread(function()
 		gameInstance.pRoomManager:Warp(previousRoom, false, false, nullName, {R=0.0, G=0.0, B=0.0, A=1.0})
-	end
+	end)
+	return true
 end
 
 function SummonRave(duration)
+	if postProcessActive then return false end
+	postProcessActive = true
 	local postProcess = FindFirstOf("PostProcessVolume")
 	local timer = 0.0
 	local fullcycle = 2.0
@@ -231,40 +280,48 @@ function SummonRave(duration)
 		postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
 		if timer >= duration or not postProcess:IsValid() then
 			if postProcess:IsValid() then postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0} end
+			postProcessActive = false
 			return true
 		end
 		return false
 	end)
+	return true
 end
 
 function SummonDarkness(duration)
+	if postProcessActive then return false end
+	postProcessActive = true
 	local postProcess = FindFirstOf("PostProcessVolume")
 	postProcess.Settings.bOverride_VignetteIntensity = 1
 	postProcess.Settings.VignetteIntensity = 5.0
     ExecuteWithDelay(math.floor(duration*1000), function()
         if postProcess:IsValid() then postProcess.Settings.VignetteIntensity = 0.0 end
+		postProcessActive = false
     end)
+	return true
 end
 
 function TriggerEarthquake()
     local player = GetPlayerCharacter()
 	player.Step:CameraShake(10.0, 0.15, 60.0, 0.3, 40.0, 0.0, 0.0, player.criticalForceFeedback, nullName, false, nullName)
+	return true
 end
 
 function ForceInvert(duration)
     local player = GetPlayerCharacter()
-    if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
+	if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
     player.CharacterInventory:SetSkillOnOff(FName("Invert"), false)
     local preId, postId = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
         player.CharacterInventory:SetSkillOnOff(FName("Invert"), false)
     end)
     ExecuteWithDelay(math.floor(duration*1000), function()
         if player:IsValid() then
-            if eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
+			if eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
             player.CharacterInventory:SetSkillOnOff(FName("Invert"), true)
         end
         UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId, postId)
     end)
+	return true
 end
 
 function NoSkillShards(duration)
@@ -279,9 +336,19 @@ function NoSkillShards(duration)
         end
         UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId, postId)
     end)
+	return true
+end
+
+function SetAllSkillOnOff(flag)
+    local player = GetPlayerCharacter()
+    for index = 1,#player.CharacterInventory.mySkills,1 do
+        player.CharacterInventory:SetSkillOnOff(player.CharacterInventory.mySkills[index].ID, flag)
+    end
 end
 
 function WeaponsOnly(duration)
+	if equipmentChangeActive then return false end
+	equipmentChangeActive = true
     local player = GetPlayerCharacter()
 	local inventory = player.CharacterInventory
 	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
@@ -290,15 +357,21 @@ function WeaponsOnly(duration)
 	local directionalShard = inventory.netEquipment.DirectionalShard
 	local enchantShard = inventory.netEquipment.EnchantShard
 	local familiarShard = inventory.netEquipment.FamiliarShard
-	interfaceHUD:DispShortcutMenu(true)
-    UnequipPlayerShards()
-    local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+	ExecuteInGameThread(function()
 		interfaceHUD:DispShortcutMenu(true)
-        UnequipPlayerShards()
+		UnequipPlayerShards()
+	end)
+    local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			UnequipPlayerShards()
+		end)
     end)
     local preId2, postId2 = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", function() end, function()
-        interfaceHUD:DispShortcutMenu(true)
-		UnequipPlayerShards()
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			UnequipPlayerShards()
+		end)
     end)
     ExecuteWithDelay(math.floor(duration*1000), function()
 		if player:IsValid() then
@@ -309,31 +382,34 @@ function WeaponsOnly(duration)
 		end
 		UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", preId2, postId2)
+		equipmentChangeActive = false
     end)
-end
-
-function SetAllSkillOnOff(flag)
-    local player = GetPlayerCharacter()
-    for index = 1,#player.CharacterInventory.mySkills,1 do
-        player.CharacterInventory:SetSkillOnOff(player.CharacterInventory.mySkills[index].ID, flag)
-    end
+	return true
 end
 
 function ShardsOnly(duration)
+	if equipmentChangeActive then return false end
+	equipmentChangeActive = true
     local player = GetPlayerCharacter()
 	local inventory = player.CharacterInventory
 	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
 	local originalWeapon = inventory.netEquipment.weapon
 	local originalBullet = inventory.netEquipment.Bullet
-	interfaceHUD:DispShortcutMenu(true)
-    UnequipPlayerWeapon()
-    local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+	ExecuteInGameThread(function()
 		interfaceHUD:DispShortcutMenu(true)
-        UnequipPlayerWeapon()
+		UnequipPlayerWeapon()
+	end)
+    local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			UnequipPlayerWeapon()
+		end)
     end)
     local preId2, postId2 = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", function() end, function()
-		interfaceHUD:DispShortcutMenu(true)
-        UnequipPlayerWeapon()
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			UnequipPlayerWeapon()
+		end)
     end)
     ExecuteWithDelay(math.floor(duration*1000), function()
 		if player:IsValid() then
@@ -344,10 +420,14 @@ function ShardsOnly(duration)
 		end
 		UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", preId2, postId2)
+		equipmentChangeActive = false
     end)
+	return true
 end
 
 function ForceEquipment(duration)
+	if equipmentChangeActive then return false end
+	equipmentChangeActive = true
     local player = GetPlayerCharacter()
 	local inventory = player.CharacterInventory
 	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
@@ -372,18 +452,24 @@ function ForceEquipment(duration)
 	print("Forced directional shard: " .. currentDirectionalShard:ToString())
 	print("Forced enchant shard: " .. currentEnchantShard:ToString())
 	print("Forced familiar shard: " .. currentFamiliarShard:ToString())
-	interfaceHUD:DispShortcutMenu(true)
-	EquipPlayerWeapon(currentWeapon, currentBullet)
-	EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
-	local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+	ExecuteInGameThread(function()
 		interfaceHUD:DispShortcutMenu(true)
 		EquipPlayerWeapon(currentWeapon, currentBullet)
 		EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
+	end)
+	local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			EquipPlayerWeapon(currentWeapon, currentBullet)
+			EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
+		end)
     end)
     local preId2, postId2 = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", function() end, function()
-		interfaceHUD:DispShortcutMenu(true)
-		EquipPlayerWeapon(currentWeapon, currentBullet)
-		EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
+		ExecuteInGameThread(function()
+			interfaceHUD:DispShortcutMenu(true)
+			EquipPlayerWeapon(currentWeapon, currentBullet)
+			EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
+		end)
     end)
     ExecuteWithDelay(math.floor(duration*1000), function()
 		if player:IsValid() then
@@ -395,7 +481,9 @@ function ForceEquipment(duration)
 		end
 	 	UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 	 	UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", preId2, postId2)
+		equipmentChangeActive = false
     end)
+	return true
 end
 
 function HeavenOrHell(duration)
@@ -413,6 +501,7 @@ function HeavenOrHell(duration)
 	else
 		ModifyEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69}, 100.0, false, duration)
 	end
+	return true
 end
 
 function ReturnBooks()
@@ -420,22 +509,31 @@ function ReturnBooks()
     for index = 1,#player.CharacterInventory.myBorrowedBooks,1 do
         player.CharacterInventory:ReturnTheBook(player.CharacterInventory.myBorrowedBooks[1].ID)
     end
+	return true
 end
 
 function CallTheLibrary()
+	if orlokStandbyActive then return false end
 	-- If OD has been defeated then simply warp to library
 	if gameInstance:IsCompletedBoss(FName("N2012")) then
-		gameInstance.pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {})
+		ExecuteInGameThread(function()
+			gameInstance.pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {})
+		end)
 	-- Otherwise put OD on standby in the next save room entered
 	else
+		orlokStandbyActive = true
 		local preId, postId
 		preId, postId = RegisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", function()
 			if not gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then
-				StartSaveRoomBoss()
+				orlokStandbyActive = false
+				ExecuteInGameThread(function()
+					StartSaveRoomBoss()
+				end)
 				UnregisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", preId, postId)
 			end
 		end)
 	end
+	return true
 end
 
 function StartSaveRoomBoss()
@@ -487,7 +585,7 @@ function StartSaveRoomBoss()
 	player.m_SoundControlComponent:CharaGroupLoad(bossOD, "ENEMY", bossID)
 	local preId, postId
 	preId, postId = RegisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", function()
-		if GetCharacterHealthRatio(bossOD) < 1/3 then
+		if GetCharacterHealthRatio(bossOD) <= 1 - 6666/7500 then
 			EndSaveRoomBoss(bossOD)
 			UnregisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", preId, postId)
 		end
@@ -514,6 +612,7 @@ end
 
 function ModifyEquipSpecialAttribute(attributes, differences, multiply, duration)
     local player = GetPlayerCharacter()
+	local shouldStopEffect = false
 	local originalAttributes = {}
 	local currentAttributes = {}
 	for index = 1,#attributes,1 do
@@ -559,13 +658,26 @@ function ModifyEquipSpecialAttribute(attributes, differences, multiply, duration
 			end
 		end
     end)
-    ExecuteWithDelay(math.floor(duration*1000), function()
+	local preId4, postId4
+    preId4, postId4 = RegisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", function()
+		shouldStopEffect = true
 		for index = 1,#attributes,1 do
 			if player:IsValid() then player:SetEquipSpecialAttribute(attributes[index], originalAttributes[index]) end
 		end
 		UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", preId2, postId2)
 		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", preId3, postId3)
+		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId4, postId4)
+    end)
+    ExecuteWithDelay(math.floor(duration*1000), function()
+		if shouldStopEffect then return end
+		for index = 1,#attributes,1 do
+			if player:IsValid() then player:SetEquipSpecialAttribute(attributes[index], originalAttributes[index]) end
+		end
+		UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
+		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", preId2, postId2)
+		UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", preId3, postId3)
+		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId4, postId4)
     end)
 end
 
@@ -613,15 +725,255 @@ function UnequipPlayerShards()
 	end
 end
 
-function RestoreTimeDilation()
-    local player = GetPlayerCharacter()
-    utility:PBCategorySlomo(7, 0, 1.0, player)
+function StopAllEffects()
+	gameInstance:DEBUG_IsScreenCaptureEnabled()
 end
 
+RegisterKeyBind(Key.NUM_ZERO, function()
+    PoisonPlayer()
+end)
+
+RegisterKeyBind(Key.NUM_ONE, function()
+    CursePlayer()
+end)
+
+RegisterKeyBind(Key.NUM_TWO, function()
+    PetrifyPlayer()
+end)
+
+RegisterKeyBind(Key.NUM_THREE, function()
+    SlowPlayerDown()
+end)
+
+RegisterKeyBind(Key.NUM_FOUR, function()
+    UseWaystone()
+end)
+
+RegisterKeyBind(Key.NUM_FIVE, function()
+    EmptyHealth()
+end)
+
+RegisterKeyBind(Key.NUM_SIX, function()
+    EmptyMagic()
+end)
+
+RegisterKeyBind(Key.NUM_SEVEN, function()
+    RefillHealth()
+end)
+
+RegisterKeyBind(Key.NUM_EIGHT, function()
+    RefillMagic()
+end)
+
+RegisterKeyBind(Key.NUM_NINE, function()
+    ShuffleColors()
+end)
+
+RegisterKeyBind(Key.R, function()
+    FakeFlawlessWin()
+end)
+
+RegisterKeyBind(Key.T, function()
+    PlayDeathQuote()
+end)
+
+RegisterKeyBind(Key.Y, function()
+    FlipPlayer(10.0)
+end)
+
+RegisterKeyBind(Key.U, function()
+    ShuffleControls(10.0)
+end)
+
+RegisterKeyBind(Key.I, function()
+    UseWitchTime(10.0)
+end)
+
+RegisterKeyBind(Key.O, function()
+    TurboEnemies(10.0)
+end)
+
+RegisterKeyBind(Key.P, function()
+    UncontrollableSpeed(10.0)
+end)
+
+RegisterKeyBind(Key.F, function()
+    CriticalMode(10.0)
+end)
+
+RegisterKeyBind(Key.G, function()
+    GoldRush(10.0)
+end)
+
+RegisterKeyBind(Key.H, function()
+    UseRosario()
+end)
+
+RegisterKeyBind(Key.J, function()
+    SummonAmbush()
+end)
+
+RegisterKeyBind(Key.K, function()
+    RewindTime()
+end)
+
+RegisterKeyBind(Key.L, function()
+    SummonRave(10.0)
+end)
+
+RegisterKeyBind(Key.V, function()
+    SummonDarkness(10.0)
+end)
+
+RegisterKeyBind(Key.B, function()
+    TriggerEarthquake(10.0)
+end)
+
+RegisterKeyBind(Key.N, function()
+    ForceInvert(10.0)
+end)
+
+RegisterKeyBind(Key.M, function()
+    NoSkillShards(10.0)
+end)
+
 RegisterKeyBind(Key.F1, function()
-    ExecuteInGameThread(function()
-        CallTheLibrary()
-    end)
+    WeaponsOnly(10.0)
+end)
+
+RegisterKeyBind(Key.F2, function()
+    ShardsOnly(10.0)
+end)
+
+RegisterKeyBind(Key.F3, function()
+    ForceEquipment(10.0)
+end)
+
+RegisterKeyBind(Key.F4, function()
+    HeavenOrHell(10.0)
+end)
+
+RegisterKeyBind(Key.F5, function()
+    ReturnBooks()
+end)
+
+RegisterKeyBind(Key.F6, function()
+    CallTheLibrary()
+end)
+
+RegisterKeyBind(Key.F7, function()
+    StopAllEffects()
 end)
 
 print("CC script loaded")
+
+function isReady()
+  return IsGameReady()
+end
+
+timed = {}
+
+LoopAsync(10000, function()
+  checkConn()
+end)
+
+function split (inputstr, sep)
+  if sep == nil then
+          sep = "%s"
+  end
+  local t={}
+  for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+          table.insert(t, str)
+  end
+  return t
+end
+
+
+LoopAsync(50, function()
+
+  if not connected() then return end
+
+  id, code, dur = getEffect()
+
+  if code == "" then
+    return
+  end
+
+  local status, ready = pcall(isReady)
+
+  if not status or not ready then
+    ccRespond(id, 3)
+    return
+  end
+
+  
+  if dur > 0 then
+    local rec = timed[code]
+    if rec ~= nil then 
+      ccRespond(id, 3)
+      return
+    end
+  end
+
+  local arg=nil
+
+  if string.find(code, '_') ~= nil then
+    local parts = split(code, '_')
+    code = parts[0]
+    arg = parts[1]
+  end
+
+  print(code)
+  local func =_G[code]
+
+  if pcall(function()
+    if func ~= nil then
+      local res = nil
+      if arg~=nil then
+        res = func(arg)
+      else
+        res = func()
+      end
+      if res then
+
+        if dur > 0 then
+          ccRespondTimed(id, 0, dur)
+
+          local entry = {}
+          entry["id"] = id
+          entry["dur"] = dur
+          entry["code"] = code
+          timed[code] = entry
+
+        else
+          ccRespond(id, 0)
+        end
+
+      else
+        ccRespond(id, 3)
+      end
+    end
+  end) then
+
+  else
+    ccRespond(id, 3)
+  end
+
+end
+)
+
+LoopAsync(250, function()
+  for code,entry in pairs(timed) do
+    entry["dur"] = entry["dur"] - 250
+    if entry["dur"] <= 0 then
+      local code = entry["code"] .. "_end"
+
+      local func =_G[code]
+
+      if func == nil or pcall(func) then
+        ccRespondTimed(entry["id"], 8, 0)
+        timed[entry["code"]]=nil
+      end
+    end
+  end
+end)
