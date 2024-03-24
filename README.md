@@ -23,7 +23,7 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 | Turbo Enemies        | They move so fast !                                                                                               | 250   | 30s      | 0        |
 | Uncontrollable Speed | The more speed the better… right ?                                                                                | 200   | 30s      | -        |
 | Critical Mode        | Every player attack is a guaranteed crit, however defense will be set to 0                                        | 150   | 30s      | -        |
-| Gold Rush            | Call upon the player's thirst for gold, drastically increasing money drops at the cost of draining their currency | 300   | 60s      | -        |
+| Gold Rush            | Call upon the player's thirst for gold, converting damage dealt to money at the cost of draining their currency   | 250   | 60s      | -        |
 | Use Rosario          | Kill every enemy on the current screen. If it's a boss it will only inflict damage                                | 200   | ---      | -        |
 | Summon Ambush        | Ambush the player by surrounding them with a random enemy                                                         | 150   | ---      | -        |
 | Rewind Time          | Warp the player back to the last room they've traversed. Does not work during boss fights                         | 250   | ---      | -        |
