@@ -87,8 +87,8 @@ end
 
 function SplitString(inString, separator)
 	local list = {}
-	for suString in string.gmatch(inString, "([^"..separator.."]+)") do
-		table.insert(list, suString)
+	for subString in string.gmatch(inString, "([^"..separator.."]+)") do
+		table.insert(list, subString)
 	end
 	return list
 end

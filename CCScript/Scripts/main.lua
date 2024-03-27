@@ -3,11 +3,11 @@ print("Loading CC script")
 require("utility")
 require("constant")
 
+local displayNotifications = true
 local timeDilationActive = false
 local postProcessActive = false
 local equipmentChangeActive = false
 local orlokStandbyActive = false
-local displayNotifications = true
 
 function IsGameReady()
     local player = GetPlayerCharacter()
@@ -18,9 +18,18 @@ function IsGameReady()
 end
 
 function NotifyCrowdControlCommand(effectName)
+	if not displayNotifications then return end
+	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+	interfaceHUD:DisplayItemNameWindow(effectName, 1022)
+end
+
+function ToggleDisplayNotifications()
 	if displayNotifications then
-		local interfaceHUD = FindFirstOf("PBInterfaceHUD")
-		interfaceHUD:DisplayItemNameWindow(effectName, 1022)
+		NotifyCrowdControlCommand("Notifications Off")
+		displayNotifications = false
+	else
+		displayNotifications = true
+		NotifyCrowdControlCommand("Notifications On")
 	end
 end
 
@@ -63,14 +72,14 @@ end
 function EmptyHealth()
 	NotifyCrowdControlCommand("Empty Health")
     local player = GetPlayerCharacter()
-    player.CharacterStatus:SetHitPointForce(1.0)
+    player.CharacterStatus:SetHitPointForce(1)
 	return true
 end
 
 function EmptyMagic()
 	NotifyCrowdControlCommand("Empty Magic")
     local player = GetPlayerCharacter()
-    player.CharacterStatus:SetMagicPointForce(1.0)
+    player.CharacterStatus:SetMagicPointForce(1)
 	return true
 end
 
@@ -91,6 +100,7 @@ end
 function ShuffleColors()
 	NotifyCrowdControlCommand("Shuffle Colors")
     local player = GetPlayerCharacter()
+	-- Only shuffle colors and not haircuts to avoid crashes
 	ExecuteInGameThread(function()
 		for index = 1,6,1 do
 			for subindex = 0,2,1 do
@@ -123,7 +133,7 @@ function FlipPlayer(duration)
 	NotifyCrowdControlCommand("Flip Player")
 	local shouldStopEffect = false
     utility:SetLeftAnalogMirrorFlag(true)
-	-- Switching rooms breaks it so enabled it back
+	-- Switching rooms breaks it so enable it back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
         utility:SetLeftAnalogMirrorFlag(true)
     end)
@@ -173,6 +183,7 @@ function ShuffleControls(duration)
     systemSettings:BindToGamepad_NO_CHECK(4, currentDirectional)
     systemSettings:BindToGamepad_NO_CHECK(5, currentEffective)
     systemSettings:BindToGamepad_NO_CHECK(7, currentShortcut)
+	-- Prevent the player from changing them back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
 		systemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
 		systemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
@@ -340,6 +351,8 @@ function UseRosario()
 	NotifyCrowdControlCommand("Use Rosario")
     local player = GetPlayerCharacter()
 	local actorInstances = FindAllOf("PBBaseCharacter")
+	-- All enemies found will be defeated instantly
+	-- All bosses found will be dealt 10% of health
 	ExecuteInGameThread(function()
 		for index = 1,#actorInstances,1 do
 			local actor = actorInstances[index]
@@ -363,6 +376,7 @@ function SummonAmbush()
 	local chosenEnemy = RandomChoice(enemylist)
 	local enemyLevel = gameInstance.pMapManager:GetRoomTraverseRate({})//2
 	print("Spawned enemy: " .. chosenEnemy)
+	-- Spawn 2 of the same random enemy with their levels scaling with map completion
 	ExecuteInGameThread(function()
 		local enemy1 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
 		local enemy2 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
@@ -378,6 +392,7 @@ end
 function RewindTime()
 	if gameInstance:IsBossBattleNow() then return false end
 	NotifyCrowdControlCommand("Rewind Time")
+	-- Warp in the last valid room traversed, 2 rooms back at most
 	local chosenRoom
 	if     previousRoom2 ~= nullName and not IsInList(rotatingRooms, previousRoom2:ToString()) then
 		chosenRoom = previousRoom2
@@ -406,7 +421,7 @@ function SummonRave(duration)
 	-- Cycle through color gains
 	LoopAsync(milliDeltaSeconds, function()
 		if shouldStopEffect then return true end
-		timer = timer + milliDeltaSeconds
+		timer = timer + deltaSeconds*1000
 		progress = timer%fullcycle
 		color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
 		postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
@@ -467,6 +482,7 @@ function ForceInvert(duration)
     local player = GetPlayerCharacter()
 	if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
     player.CharacterInventory:SetSkillOnOff(FName("Invert"), false)
+	-- Prevent the player from enabling it back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
         player.CharacterInventory:SetSkillOnOff(FName("Invert"), false)
     end)
@@ -499,6 +515,7 @@ function NoSkillShards(duration)
 	local shouldStopEffect = false
     local player = GetPlayerCharacter()
     SetAllSkillOnOff(false)
+	-- Prevent the player from enabling them back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
         SetAllSkillOnOff(false)
     end)
@@ -506,18 +523,14 @@ function NoSkillShards(duration)
 	-- End effect after delay
     ExecuteWithDelay(duration, function()
 		if shouldStopEffect then return end
-        if player:IsValid() then 
-            SetAllSkillOnOff(true)
-        end
+        if player:IsValid() then SetAllSkillOnOff(true) end
         UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId2, postId2)
     end)
 	-- Stop effect early if necessary
 	preId2, postId2 = RegisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", function()
 		shouldStopEffect = true
-        if player:IsValid() then 
-            SetAllSkillOnOff(true)
-        end
+        if player:IsValid() then SetAllSkillOnOff(true) end
         UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", preId1, postId1)
 		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId2, postId2)
 	end)
@@ -548,6 +561,7 @@ function WeaponsOnly(duration)
 		interfaceHUD:DispShortcutMenu(true)
 		UnequipPlayerShards()
 	end)
+	-- Prevent the player from equipping it back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
 		ExecuteInGameThread(function()
 			interfaceHUD:DispShortcutMenu(true)
@@ -606,6 +620,7 @@ function ShardsOnly(duration)
 		interfaceHUD:DispShortcutMenu(true)
 		UnequipPlayerWeapon()
 	end)
+	-- Prevent the player from equipping them back
     local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
 		ExecuteInGameThread(function()
 			interfaceHUD:DispShortcutMenu(true)
@@ -684,6 +699,7 @@ function ForceEquipment(duration)
 		EquipPlayerWeapon(currentWeapon, currentBullet)
 		EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
 	end)
+	-- Prevent the player from changing their equipment
 	local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
 		ExecuteInGameThread(function()
 			interfaceHUD:DispShortcutMenu(true)
@@ -928,6 +944,7 @@ function ModifyEquipSpecialAttribute(attributes, differences, multiply, duration
 		player:SetEquipSpecialAttribute(attributes[index], newAttribute)
 		currentAttributes[index] = newAttribute
 	end
+	-- Recalculate the stat if something caused it to be changed
 	local preId1, postId1 = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function() end, function()
 		for index = 1,#attributes,1 do
 			currentAttribute = player:GetEquipSpecialAttribute(attributes[index])
@@ -1013,140 +1030,9 @@ RegisterHook("/Script/ProjectBlood.PBLoadingManager:Init", function()
     StopAllEffects()
 end)
 
---RegisterKeyBind(Key.NUM_ZERO, function()
---    PoisonPlayer()
---end)
-
-RegisterKeyBind(Key.NUM_ONE, function()
-    CursePlayer()
-end)
-
-RegisterKeyBind(Key.NUM_TWO, function()
-    PetrifyPlayer()
-end)
-
-RegisterKeyBind(Key.NUM_THREE, function()
-    SlowPlayerDown()
-end)
-
-RegisterKeyBind(Key.NUM_FOUR, function()
-    UseWaystone()
-end)
-
-RegisterKeyBind(Key.NUM_FIVE, function()
-    EmptyHealth()
-end)
-
-RegisterKeyBind(Key.NUM_SIX, function()
-    EmptyMagic()
-end)
-
-RegisterKeyBind(Key.NUM_SEVEN, function()
-    RefillHealth()
-end)
-
-RegisterKeyBind(Key.NUM_EIGHT, function()
-    RefillMagic()
-end)
-
-RegisterKeyBind(Key.NUM_NINE, function()
-    ShuffleColors()
-end)
-
-RegisterKeyBind(Key.R, function()
-    FakeFlawlessWin()
-end)
-
-RegisterKeyBind(Key.T, function()
-    PlayDeathQuote()
-end)
-
-RegisterKeyBind(Key.Y, function()
-    FlipPlayer(10000)
-end)
-
-RegisterKeyBind(Key.U, function()
-    ShuffleControls(10000)
-end)
-
-RegisterKeyBind(Key.I, function()
-    UseWitchTime(10000)
-end)
-
-RegisterKeyBind(Key.O, function()
-    TurboEnemies(10000)
-end)
-
-RegisterKeyBind(Key.P, function()
-    UncontrollableSpeed(10000)
-end)
-
-RegisterKeyBind(Key.F, function()
-    CriticalMode(10000)
-end)
-
-RegisterKeyBind(Key.G, function()
-    GoldRush(60000)
-end)
-
-RegisterKeyBind(Key.H, function()
-    UseRosario()
-end)
-
-RegisterKeyBind(Key.J, function()
-    SummonAmbush()
-end)
-
-RegisterKeyBind(Key.K, function()
-    RewindTime()
-end)
-
-RegisterKeyBind(Key.L, function()
-    SummonRave(10000)
-end)
-
-RegisterKeyBind(Key.V, function()
-    SummonDarkness(10000)
-end)
-
-RegisterKeyBind(Key.B, function()
-    TriggerEarthquake(10000)
-end)
-
-RegisterKeyBind(Key.N, function()
-    ForceInvert(10000)
-end)
-
-RegisterKeyBind(Key.M, function()
-    NoSkillShards(10000)
-end)
-
+-- Toggle CC notifications with F1
 RegisterKeyBind(Key.F1, function()
-    WeaponsOnly(10000)
-end)
-
-RegisterKeyBind(Key.F2, function()
-    ShardsOnly(10000)
-end)
-
-RegisterKeyBind(Key.F3, function()
-    ForceEquipment(10000)
-end)
-
-RegisterKeyBind(Key.F4, function()
-    HeavenOrHell(10000)
-end)
-
-RegisterKeyBind(Key.F5, function()
-    ReturnBooks()
-end)
-
-RegisterKeyBind(Key.F6, function()
-    CallTheLibrary()
-end)
-
-RegisterKeyBind(Key.F7, function()
-    StopAllEffects()
+    ToggleDisplayNotifications()
 end)
 
 print("CC script loaded")
