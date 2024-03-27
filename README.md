@@ -26,7 +26,7 @@ A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
 | Gold Rush            | Call upon the player's thirst for gold, converting damage dealt to money at the cost of draining their currency   | 250   | 60s      | -        |
 | Use Rosario          | Kill every enemy on the current screen. If it's a boss it will only inflict damage                                | 200   | ---      | -        |
 | Summon Ambush        | Ambush the player by surrounding them with a random enemy                                                         | 150   | ---      | -        |
-| Rewind Time          | Warp the player back to the last room they've traversed. Does not work during boss fights                         | 250   | ---      | -        |
+| Rewind Time          | Warp the player 2 rooms backwards. Does not work during boss fights                                               | 250   | ---      | -        |
 | Summon Rave          | It's party time at the demon castle !                                                                             | 100   | 30s      | 1        |
 | Summon Darkness      | Follow the light at the end of the tunnel                                                                         | 100   | 20s      | 1        |
 | Trigger Earthquake   | Shakin' and vibin'                                                                                                | 100   | 10s      | -        |
