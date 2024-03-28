@@ -9,10 +9,13 @@ local postProcessActive = false
 local equipmentChangeActive = false
 local orlokStandbyActive = false
 
-function IsGameReady()
+function CanExecuteCommand()
     local player = GetPlayerCharacter()
-	if not player:IsValid() then return false end
+	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
 	if not IsInList({1, 6, 9}, gameInstance:GetGameModeType()) then return false end
+	if not player:IsValid() then return false end
+	if not interfaceHUD:IsValid() then return false end
+	if not interfaceHUD:GetGaugeWidget():GetIsVisible() then return false end
 	if gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then return false end
 	return true
 end
@@ -326,23 +329,22 @@ function GoldRush(duration)
 	local preId2, postId2
 	-- Drain up to half of the player's gold
 	LoopAsync(tickStep, function()
-		if shouldStopEffect then return true end
-		timer = timer + tickStep
-		gameInstance:AddTotalCoin(-coinLossTarget//totalTickCount)
-		if timer >= duration or not player:IsValid() then
+		if shouldStopEffect or not player:IsValid() then
 			if damagePopup:IsValid() then damagePopup:RemoveFromViewport() end
 			UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", preId1, postId1)
 			UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId2, postId2)
 			return true
 		end
+		gameInstance:AddTotalCoin(-coinLossTarget//totalTickCount)
 		return false
+	end)
+	-- End effect after delay
+    ExecuteWithDelay(duration, function()
+		shouldStopEffect = true
 	end)
 	-- Stop effect early if necessary
 	preId2, postId2 = RegisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", function()
 		shouldStopEffect = true
-		if damagePopup:IsValid() then damagePopup:RemoveFromViewport() end
-		UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", preId1, postId1)
-		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId2, postId2)
 	end)
 	return true
 end
@@ -415,30 +417,29 @@ function SummonRave(duration)
 	local progress = 0
 	local fullcycle = 1500
 	local deltaSeconds = gameplayStatics:GetWorldDeltaSeconds(postProcess)
-	local milliDeltaSeconds = math.floor(deltaSeconds*1000)
 	local preId, postId
 	postProcess.Settings.bOverride_ColorGain = 1
 	-- Cycle through color gains
-	LoopAsync(milliDeltaSeconds, function()
-		if shouldStopEffect then return true end
-		timer = timer + deltaSeconds*1000
-		progress = timer%fullcycle
-		color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
-		postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
-		if timer >= duration or not postProcess:IsValid() then
+	LoopAsync(math.floor(deltaSeconds*1000), function()
+		if shouldStopEffect or not postProcess:IsValid() then
 			if postProcess:IsValid() then postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0} end
 			UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId, postId)
 			postProcessActive = false
 			return true
 		end
+		timer = timer + deltaSeconds*1000
+		progress = timer%fullcycle
+		color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
+		postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
 		return false
+	end)
+	-- End effect after delay
+    ExecuteWithDelay(duration, function()
+		shouldStopEffect = true
 	end)
 	-- Stop effect early if necessary
 	preId, postId = RegisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", function()
 		shouldStopEffect = true
-		if postProcess:IsValid() then postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0} end
-		UnregisterHook("/Script/ProjectBlood.PBGameInstance:DEBUG_IsScreenCaptureEnabled", preId, postId)
-		postProcessActive = false
 	end)
 	return true
 end
@@ -1038,7 +1039,7 @@ end)
 print("CC script loaded")
 
 function isReady()
-	return IsGameReady()
+	return CanExecuteCommand()
 end
 
 timed = {}
