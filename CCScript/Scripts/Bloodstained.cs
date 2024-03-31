@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using CrowdControl.Common;
 using JetBrains.Annotations;
 using ConnectorType = CrowdControl.Common.ConnectorType;
-//using Request = ConnectorLib.JSON.Request;
-//using RequestType = ConnectorLib.JSON.RequestType;
 
 namespace CrowdControl.Games.Packs.Bloodstained;
 
@@ -56,6 +54,4 @@ public class Bloodstained : SimpleTCPPack
 		new("Return Books",         "ReturnBooks")         {Description = "This is a library, not a bookshop",                                                                               Category = "Main", Price =  500},
 		new("Call The Library",     "CallTheLibrary")      {Description = "Report Miriam to Orlok Dracule so that he can meet with her soon to talk about the tomes she did not return",     Category = "Main", Price = 1000}
     };
-	
-	//public override bool StopAllEffects() => Connector.Send(new Request {viewer = "SDK", code = "StopAllEffects", type = RequestType.Stop});
 }

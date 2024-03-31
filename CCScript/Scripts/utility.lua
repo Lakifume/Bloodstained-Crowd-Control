@@ -15,9 +15,15 @@ widgetBlueprintLibrary = StaticConstructObject(widgetBlueprintLibraryclass, game
 assetRegistryHelpers = StaticFindObject("/Script/AssetRegistry.Default__AssetRegistryHelpers")
 
 -- Update current room info for every room change
-currentRoom = nullName
-previousRoom1 = nullName
-previousRoom2 = nullName
+
+function ResetRoomHistory()
+	currentRoom = nullName
+	previousRoom1 = nullName
+	previousRoom2 = nullName
+end
+
+ResetRoomHistory()
+
 RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
     local tempRoom = gameInstance.pRoomManager:GetCurrentRoomId()
 	if currentRoom ~= tempRoom then
@@ -93,9 +99,16 @@ function SplitString(inString, separator)
 	return list
 end
 
-function IsInList(list, element)
+function IsInList(list, item)
     for index = 1,#list,1 do
-        if list[index] == element then return true end
+        if list[index] == item then return true end
+    end
+    return false
+end
+
+function ItemInInventory(list, item)
+    for index = 1,#list,1 do
+        if list[index].ID:ToString() == item and list[index].Num > 0 then return true end
     end
     return false
 end
@@ -109,4 +122,10 @@ function PickAndRemove(list)
 	local chosenItem = list[chosenIndex]
 	table.remove(list, chosenIndex)
 	return chosenItem
+end
+
+function PrintToConsole(...)
+    local param = tostring(...)
+    if (...).ToString ~= nil then param = (...):ToString() end
+    print(param)
 end
