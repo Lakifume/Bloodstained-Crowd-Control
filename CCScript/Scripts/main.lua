@@ -335,26 +335,24 @@ function GoldRushEnd()
 end
 
 function UseRosario()
-	NotifyCrowdControlCommand("Use Rosario")
     local player = GetPlayerCharacter()
 	local hasFoundTarget = false
 	local actorInstances = FindAllOf("PBBaseCharacter")
 	-- All enemies found will be defeated instantly
 	-- All bosses found will be dealt 10% of health
-	ExecuteInGameThread(function()
-		for index = 1,#actorInstances,1 do
-			local actor = actorInstances[index]
-			if actor:IsValid() then
-				if actor:IsBoss() then
-					actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.1))
-					hasFoundTarget = true
-				elseif actor:IsEnemy() then 
-					actor:DirectDamage(actor.CharacterStatus.HitPoint)
-					hasFoundTarget = true
-				end
+	for index = 1,#actorInstances,1 do
+		local actor = actorInstances[index]
+		if actor:IsValid() then
+			if actor:IsBoss() then
+				actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.1))
+				if actor.OnTheScreen then hasFoundTarget = true end
+			elseif actor:IsEnemy() then 
+				actor:DirectDamage(actor.CharacterStatus.HitPoint)
+				if actor.OnTheScreen then hasFoundTarget = true end
 			end
 		end
-	end)
+	end
+	if hasFoundTarget then NotifyCrowdControlCommand("Use Rosario") end
 	return hasFoundTarget
 end
 
@@ -392,9 +390,7 @@ function RewindTime()
 		chosenRoom = previousRoom1
 	else return false end
 	NotifyCrowdControlCommand("Rewind Time")
-	ExecuteInGameThread(function()
-		gameInstance.pRoomManager:Warp(chosenRoom, false, false, nullName, {R=0.0, G=0.0, B=0.0, A=1.0})
-	end)
+	ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
 	return true
 end
 
@@ -736,8 +732,8 @@ function HeavenOrHell()
     local player = GetPlayerCharacter()
 	local isInvincible = math.random() < 0.5
 	ModifyEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69}, isInvincible and 100.0 or -100.0, false)
-	heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook = RegisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", function()
-		if not isInvincible and player:IsValid() then player.Step:Kill() end
+	heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook = RegisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", function(self)
+		if not isInvincible and GetClassName(self:get()) == GetClassName(player.Step) then player.Step:Kill() end
 	end)
 	return true
 end
@@ -765,9 +761,7 @@ function CallTheLibrary()
 	if gameInstance:IsCompletedBoss(FName("N2012")) then
 		if gameInstance:IsBossBattleNow() then return false end
 		NotifyCrowdControlCommand("Call The Library")
-		ExecuteInGameThread(function()
-			gameInstance.pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {})
-		end)
+		ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {}) end)
 		return true
 	end
 	-- Otherwise put OD on standby in the next save room entered
@@ -777,9 +771,7 @@ function CallTheLibrary()
 	orlokStandbySaveRoomPreHook, orlokStandbySaveRoomPostHook = RegisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", function()
 		if not gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then
 			orlokStandbyActive = false
-			ExecuteInGameThread(function()
-				StartSaveRoomBoss()
-			end)
+			ExecuteInGameThread(StartSaveRoomBoss)
 			UnregisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", orlokStandbySaveRoomPreHook, orlokStandbySaveRoomPostHook)
 		end
 	end)
@@ -984,22 +976,23 @@ RegisterHook("/Script/ProjectBlood.PBLoadingManager:Init", function()
 end)
 
 -- Stop some effects before saving the game
-local gameLoadPreHook, gameLoadPostHook
-gameLoadPreHook, gameLoadPostHook = RegisterHook("/Script/ProjectBlood.PBLoadingManager:ShowLoadingScreen", function()
-	RegisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomUserSaved", function()
-		CriticalModeEnd()
-		ForceInvertEnd()
-		NoSkillShardsEnd()
-		WeaponsOnlyEnd()
-		ShardsOnlyEnd()
-		ForceEquipmentEnd()
-	end)
-	UnregisterHook("/Script/ProjectBlood.PBLoadingManager:ShowLoadingScreen", gameLoadPreHook, gameLoadPostHook)
+RegisterHook("/Script/ProjectBlood.PBSaveManager:SaveGameToMemory", function()
+	CriticalModeEnd()
+	ForceInvertEnd()
+	NoSkillShardsEnd()
+	WeaponsOnlyEnd()
+	ShardsOnlyEnd()
+	ForceEquipmentEnd()
 end)
 
 -- Toggle CC notifications with F1
 RegisterKeyBind(Key.F1, function()
-    ToggleDisplayNotifications()
+    HeavenOrHell()
+end)
+
+-- Toggle CC notifications with F1
+RegisterKeyBind(Key.F2, function()
+    HeavenOrHellEnd()
 end)
 
 print("CC script loaded")

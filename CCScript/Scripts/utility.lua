@@ -39,6 +39,10 @@ function GetPlayerCharacter()
     return gameInstance:GetPlayerCharacter(0)
 end
 
+function GetClassName(object)
+	return SplitString(object:GetFullName(), " ")[1]
+end
+
 function GetCharacterHealthRatio(character)
 	return character.CharacterStatus.HitPoint/character.CharacterStatus:GetMaxHitPoint()
 end
