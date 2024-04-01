@@ -444,7 +444,6 @@ end
 function SummonDarknessEnd()
 	if not summonDarknessActive then return end
 	summonDarknessActive = false
-	summonRaveShouldStopEffect = true
 	PrintToConsole("SummonDarknessEnd")
 	local postProcess = FindFirstOf("PostProcessVolume")
 	if postProcess:IsValid() then
@@ -987,12 +986,7 @@ end)
 
 -- Toggle CC notifications with F1
 RegisterKeyBind(Key.F1, function()
-    HeavenOrHell()
-end)
-
--- Toggle CC notifications with F1
-RegisterKeyBind(Key.F2, function()
-    HeavenOrHellEnd()
+    ToggleDisplayNotifications()
 end)
 
 print("CC script loaded")
