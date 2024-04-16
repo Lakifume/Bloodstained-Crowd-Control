@@ -1,5 +1,6 @@
 # Bloodstained-Crowd-Control
-A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night
+A UE4SS lua mod for Crowd Control support in Bloodstained: Ritual of the Night.  
+For best results it is recommend to combine this with True Randomization: https://github.com/Lakifume/True-Randomization/releases/latest
 
 ## Overview
 
