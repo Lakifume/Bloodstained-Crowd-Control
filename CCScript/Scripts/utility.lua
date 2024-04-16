@@ -43,8 +43,16 @@ function GetClassName(object)
 	return SplitString(object:GetFullName(), " ")[1]
 end
 
+function IsCharacterAlive(character)
+	return character.CharacterStatus.HitPoint > 0
+end
+
 function GetCharacterHealthRatio(character)
 	return character.CharacterStatus.HitPoint/character.CharacterStatus:GetMaxHitPoint()
+end
+
+function GetCharacterMagicRatio(character)
+	return character.CharacterStatus.MagicPoint/character.CharacterStatus:GetMaxMagicPoint()
 end
 
 function GetCurrentRoomProperties()

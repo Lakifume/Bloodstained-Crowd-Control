@@ -9,6 +9,7 @@ function CanExecuteCommand()
 	local interfaceHUD = FindFirstOf("PBInterfaceHUD")
 	if not IsInList({1, 6, 9}, gameInstance:GetGameModeType()) then return false end
 	if not player:IsValid() then return false end
+	if not IsCharacterAlive(player) then return false end 
 	if not interfaceHUD:IsValid() then return false end
 	if not interfaceHUD:GetGaugeWidget():GetIsVisible() then return false end
 	if gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then return false end
@@ -32,30 +33,44 @@ function ToggleDisplayNotifications()
 end
 
 function PoisonPlayer()
-	NotifyCrowdControlCommand("Poison Player")
     local player = GetPlayerCharacter()
+	if player:IsStatusPoisoned({}, {}) then return false end
+	NotifyCrowdControlCommand("Poison Player")
     player.Step:SetSpecialEffect(FName("Poison"))
 	return true
 end
 
 function CursePlayer()
-	NotifyCrowdControlCommand("Curse Player")
     local player = GetPlayerCharacter()
+	if player:IsStatusCursed({}, {}) then return false end
+	NotifyCrowdControlCommand("Curse Player")
     player.Step:SetSpecialEffect(FName("Curse"))
 	return true
 end
 
 function PetrifyPlayer()
-	NotifyCrowdControlCommand("Petrify Player")
     local player = GetPlayerCharacter()
+	if player:IsStatusStoned({}) then return false end
+	NotifyCrowdControlCommand("Petrify Player")
     player.Step:SetSpecialEffect(FName("Stone"))
 	return true
 end
 
 function SlowPlayerDown()
-	NotifyCrowdControlCommand("Slow Player Down")
     local player = GetPlayerCharacter()
+	if player:IsStatusSlowed({}, {}) then return false end
+	NotifyCrowdControlCommand("Slow Player Down")
     player.Step:SetSpecialEffect(FName("Slow"))
+	return true
+end
+
+function SlamPlayer()
+	if heavenOrHellActive then return false end
+	local player = GetPlayerCharacter()
+	if player.CharacterStatus.HitPoint <= 1 then return false end
+	if not player.Step:CanUpdateNextHitTimer() then return false end
+	NotifyCrowdControlCommand("Slam Player")
+	player:DirectDamageWithId(1.0, FName("N2008_BackStep"))
 	return true
 end
 
@@ -68,29 +83,33 @@ function UseWaystone()
 end
 
 function EmptyHealth()
-	NotifyCrowdControlCommand("Empty Health")
     local player = GetPlayerCharacter()
+	if player.CharacterStatus.HitPoint <= 1 then return false end
+	NotifyCrowdControlCommand("Empty Health")
     player.CharacterStatus:SetHitPointForce(1)
 	return true
 end
 
 function EmptyMagic()
-	NotifyCrowdControlCommand("Empty Magic")
     local player = GetPlayerCharacter()
+	if player.CharacterStatus.MagicPoint <= 1 then return false end
+	NotifyCrowdControlCommand("Empty Magic")
     player.CharacterStatus:SetMagicPointForce(1)
 	return true
 end
 
 function RefillHealth()
-	NotifyCrowdControlCommand("Refill Health")
     local player = GetPlayerCharacter()
+	if GetCharacterHealthRatio(player) >= 1.0 then return false end
+	NotifyCrowdControlCommand("Refill Health")
     player.CharacterStatus:RecoverHitPoint()
 	return true
 end
 
 function RefillMagic()
-	NotifyCrowdControlCommand("Refill Magic")
     local player = GetPlayerCharacter()
+	if GetCharacterMagicRatio(player) >= 1.0 then return false end
+	NotifyCrowdControlCommand("Refill Magic")
     player.CharacterStatus:RecoverMagicPoint()
 	return true
 end
@@ -316,10 +335,10 @@ function GoldRush()
 			gameInstance:AddTotalCoin(quantity)
 		end
 	end)
-	-- Drain up to half of the player's gold
+	-- Drain the player's gold
 	LoopAsync(1000, function()
 		if goldRushShouldStopEffect or not player:IsValid() then return true end
-		gameInstance:AddTotalCoin(-initialMoney//120)
+		gameInstance:AddTotalCoin(-initialMoney//60)
 		return false
 	end)
 	return true
@@ -335,7 +354,6 @@ function GoldRushEnd()
 end
 
 function UseRosario()
-    local player = GetPlayerCharacter()
 	local hasFoundTarget = false
 	local actorInstances = FindAllOf("PBBaseCharacter")
 	-- All enemies found will be defeated instantly
@@ -343,17 +361,30 @@ function UseRosario()
 	for index = 1,#actorInstances,1 do
 		local actor = actorInstances[index]
 		if actor:IsValid() then
-			if actor:IsBoss() then
-				actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.1))
-				if actor.OnTheScreen then hasFoundTarget = true end
-			elseif actor:IsEnemy() then 
-				actor:DirectDamage(actor.CharacterStatus.HitPoint)
-				if actor.OnTheScreen then hasFoundTarget = true end
+			if actor.OnTheScreen and IsCharacterAlive(actor) then
+				if actor:IsBoss()then
+					actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.15))
+					hasFoundTarget = true
+				elseif actor:IsEnemy() then
+					actor:DirectDamage(actor.CharacterStatus.HitPoint)
+					hasFoundTarget = true
+				end
 			end
 		end
 	end
-	if hasFoundTarget then NotifyCrowdControlCommand("Use Rosario") end
+	if hasFoundTarget then
+		NotifyCrowdControlCommand("Use Rosario")
+		ScreenFlash(0.3)
+	end
 	return hasFoundTarget
+end
+
+function ScreenFlash(duration)
+    local player = GetPlayerCharacter()
+	local cameraManager = gameplayStatics:GetPlayerCameraManager(player, 0)
+	local subDuration = duration/2
+	cameraManager:StartCameraFade(0.0, 1.0, subDuration, {R=1.0, G=1.0, B=1.0}, false, true)
+	ExecuteWithDelay(math.floor(subDuration*1000), function() cameraManager:StartCameraFade(1.0, 0.0, subDuration, {R=1.0, G=1.0, B=1.0}, false, false) end)
 end
 
 function SummonAmbush()
@@ -397,10 +428,11 @@ end
 function SummonRave()
 	if summonRaveActive then return false end
 	if summonDarknessActive then return false end
+	local postProcess = FindFirstOf("PostProcessVolume")
+	if not postProcess:IsValid() then return false end
 	summonRaveActive = true
 	summonRaveShouldStopEffect = false
 	NotifyCrowdControlCommand("Summon Rave")
-	local postProcess = FindFirstOf("PostProcessVolume")
 	local timer = 0
 	local progress = 0
 	local fullcycle = 1500
@@ -409,10 +441,12 @@ function SummonRave()
 	-- Cycle through color gains
 	LoopAsync(math.floor(deltaSeconds*1000), function()
 		if summonRaveShouldStopEffect or not postProcess:IsValid() then return true end
-		timer = timer + deltaSeconds*1000
-		progress = timer%fullcycle
-		color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
-		postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
+		ExecuteInGameThread(function()
+			timer = timer + deltaSeconds*1000
+			progress = timer%fullcycle
+			color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
+			postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
+		end)
 		return false
 	end)
 	return true
@@ -433,9 +467,10 @@ end
 function SummonDarkness()
 	if summonDarknessActive then return false end
 	if summonRaveActive then return false end
+	local postProcess = FindFirstOf("PostProcessVolume")
+	if not postProcess:IsValid() then return false end
 	summonDarknessActive = true
 	NotifyCrowdControlCommand("Summon Darkness")
-	local postProcess = FindFirstOf("PostProcessVolume")
 	postProcess.Settings.bOverride_VignetteIntensity = 1
 	postProcess.Settings.VignetteIntensity = 5.0
 	return true
@@ -511,8 +546,9 @@ end
 
 function SetAllSkillOnOff(flag)
     local player = GetPlayerCharacter()
-    for index = 1,#player.CharacterInventory.mySkills,1 do
-        player.CharacterInventory:SetSkillOnOff(player.CharacterInventory.mySkills[index].ID, flag)
+	local inventory = player.CharacterInventory
+    for index = 1,#inventory.mySkills,1 do
+        inventory:SetSkillOnOff(inventory.mySkills[index].ID, flag)
     end
 end
 
@@ -746,10 +782,12 @@ function HeavenOrHellEnd()
 end
 
 function ReturnBooks()
-	NotifyCrowdControlCommand("Return Books")
     local player = GetPlayerCharacter()
-    for index = 1,#player.CharacterInventory.myBorrowedBooks,1 do
-        player.CharacterInventory:ReturnTheBook(player.CharacterInventory.myBorrowedBooks[1].ID)
+	local inventory = player.CharacterInventory
+	if #inventory.myBorrowedBooks < 1 then return false end
+	NotifyCrowdControlCommand("Return Books")
+    for index = 1,#inventory.myBorrowedBooks,1 do
+        inventory:ReturnTheBook(inventory.myBorrowedBooks[1].ID)
     end
 	PlayEnemySound("Vo_N2012_047_jp")
 	return true
@@ -806,7 +844,8 @@ function StartSaveRoomBoss()
 	-- Spawn boss doors
 	local doorClass = FindValidActorClass("/Game/Core/Environment/Gimmick/NewGimmicks/BossDoorBase/PBBossDoor_BP.PBBossDoor_BP_C")
 	local doorPosX, doorPosZ = RelativeToAbsoluteLocation(0.0, 240.0)
-	local leftDoor = gameInstance.pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {Yaw=-180.0}, player)
+	local leftDoor = gameInstance.pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {}, player)
+	leftDoor:K2_AddActorWorldRotation({Yaw=-180}, false, {}, false)
 	leftDoor.InBossRoom = true
 	leftDoor.BossId = FName(bossID)
 	leftDoor.IsRight = false
@@ -881,18 +920,6 @@ function ModifyEquipSpecialAttribute(attributes, difference, multiply)
 			end
 		end
 	end)
-	modifyAttributeBorrowPreHook[attributes[1]], modifyAttributeBorrowPostHook[attributes[1]] = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", function() end, function()
-		for index = 1,#attributes,1 do
-			currentAttribute = player:GetEquipSpecialAttribute(attributes[index])
-			if currentAttribute ~= currentAttributes[index] then
-				originalAttributes[index] = player:GetEquipSpecialAttribute(attributes[index])
-				modifyAttributeOriginalAttribute[attributes[index]] = originalAttributes[index]
-				newAttribute = multiply and originalAttributes[index] * difference or originalAttributes[index] + difference
-				player:SetEquipSpecialAttribute(attributes[index], newAttribute)
-				currentAttributes[index] = newAttribute
-			end
-		end
-	end)
     modifyAttributeShortcutPreHook[attributes[1]], modifyAttributeShortcutPostHook[attributes[1]] = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", function() end, function()
 		for index = 1,#attributes,1 do
 			currentAttribute = player:GetEquipSpecialAttribute(attributes[index])
@@ -905,6 +932,30 @@ function ModifyEquipSpecialAttribute(attributes, difference, multiply)
 			end
 		end
     end)
+	modifyAttributeBorrowPreHook[attributes[1]], modifyAttributeBorrowPostHook[attributes[1]] = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", function() end, function()
+		for index = 1,#attributes,1 do
+			currentAttribute = player:GetEquipSpecialAttribute(attributes[index])
+			if currentAttribute ~= currentAttributes[index] then
+				originalAttributes[index] = player:GetEquipSpecialAttribute(attributes[index])
+				modifyAttributeOriginalAttribute[attributes[index]] = originalAttributes[index]
+				newAttribute = multiply and originalAttributes[index] * difference or originalAttributes[index] + difference
+				player:SetEquipSpecialAttribute(attributes[index], newAttribute)
+				currentAttributes[index] = newAttribute
+			end
+		end
+	end)
+	modifyAttributeReturnPreHook[attributes[1]], modifyAttributeReturnPostHook[attributes[1]] = RegisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ReturnTheBook", function() end, function()
+		for index = 1,#attributes,1 do
+			currentAttribute = player:GetEquipSpecialAttribute(attributes[index])
+			if currentAttribute ~= currentAttributes[index] then
+				originalAttributes[index] = player:GetEquipSpecialAttribute(attributes[index])
+				modifyAttributeOriginalAttribute[attributes[index]] = originalAttributes[index]
+				newAttribute = multiply and originalAttributes[index] * difference or originalAttributes[index] + difference
+				player:SetEquipSpecialAttribute(attributes[index], newAttribute)
+				currentAttributes[index] = newAttribute
+			end
+		end
+	end)
 end
 
 function RestoreEquipSpecialAttribute(attributes)
