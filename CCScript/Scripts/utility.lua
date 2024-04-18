@@ -103,6 +103,10 @@ function ClampValue(value, minimum, maximum)
     return math.min(math.max(minimum, value), maximum)
 end
 
+function Lerp(minimum, maximum, alpha)
+    return minimum + (maximum - minimum)*alpha
+end
+
 function SplitString(inString, separator)
     local list = {}
     for subString in string.gmatch(inString, "([^"..separator.."]+)") do

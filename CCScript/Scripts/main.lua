@@ -1,5 +1,3 @@
-print("Loading CC script")
-
 require("utility")
 require("constant")
 require("variable")
@@ -313,33 +311,25 @@ end
 function GoldRush()
     if goldRushActive then return false end
     goldRushActive = true
-    goldRushShouldStopEffect = false
+    goldRushMoneyGain = 0
     NotifyCrowdControlCommand("Gold Rush")
-    local player = GetPlayerCharacter()
-    local initialMoney = gameInstance.totalCoins
     -- Add a counter for the coins gained
-    local coinGainCount = 0
     local damagePopupClass = StaticFindObject("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C")
-    goldRushDamagePopup = widgetBlueprintLibrary:Create(player, damagePopupClass, nil)
-    goldRushDamagePopup:SetPositionInViewport({X=540.0, Y=150.0}, false)
-    goldRushDamagePopup:DisplayNumeric(coinGainCount)
+    goldRushDamagePopup = widgetBlueprintLibrary:Create(GetPlayerCharacter(), damagePopupClass, nil)
+    goldRushDamagePopup:SetPositionInViewport({X=960.0, Y=160.0}, false)
+    goldRushDamagePopup:DisplayNumeric(goldRushMoneyGain)
     goldRushDamagePopup:AddToViewport(0)
     -- Convert damage dealt to money
     goldRushDamagePopupPreHook, goldRushDamagePopupPostHook = RegisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", function(self, param1, param2)
         local damage = param1:get()
         local color = param2:get()
         if color.R == 1.0 and color.G== 1.0 and color.B == 1.0 then
-            local quantity = damage*2
-            coinGainCount = coinGainCount + quantity
-            goldRushDamagePopup:DisplayNumeric(coinGainCount)
-            gameInstance:AddTotalCoin(quantity)
+            local coinModifier = gameInstance.totalCoins/10000
+            local compModifier = Lerp(10, 1, gameInstance.pMapManager:GetRoomTraverseRate({})/100)
+            local quantity = math.max(1, math.floor(damage*math.max(0.1, coinModifier*compModifier)))
+            goldRushMoneyGain = goldRushMoneyGain + quantity
+            goldRushDamagePopup:DisplayNumeric(math.min(goldRushMoneyGain, 99999))
         end
-    end)
-    -- Drain the player's gold
-    LoopAsync(1000, function()
-        if goldRushShouldStopEffect or not player:IsValid() then return true end
-        gameInstance:AddTotalCoin(-initialMoney//60)
-        return false
     end)
     return true
 end
@@ -347,9 +337,10 @@ end
 function GoldRushEnd()
     if not goldRushActive then return end
     goldRushActive = false
-    goldRushShouldStopEffect = true
     PrintToConsole("GoldRushEnd")
+    gameInstance:SetTotalCoin(goldRushMoneyGain)
     if goldRushDamagePopup:IsValid() then goldRushDamagePopup:RemoveFromViewport() end
+    if GetPlayerCharacter():IsValid() then PlayEnemySound(goldRushMoneyGain > 0 and "SE_N1004_Coin02" or "Vo_N1004_040_jp") end
     UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", goldRushDamagePopupPreHook, goldRushDamagePopupPostHook)
 end
 
@@ -357,7 +348,7 @@ function UseRosario()
     local hasFoundTarget = false
     local actorInstances = FindAllOf("PBBaseCharacter")
     -- All enemies found will be defeated instantly
-    -- All bosses found will be dealt 10% of health
+    -- All bosses found will be dealt 15% of health
     for index = 1,#actorInstances,1 do
         local actor = actorInstances[index]
         if actor:IsValid() then
@@ -394,7 +385,7 @@ function SummonAmbush()
     local playerLocation = player:K2_GetActorLocation()
     local chosenEnemy = RandomChoice(enemylist)
     local enemyLevel = gameInstance.pMapManager:GetRoomTraverseRate({})//2
-    print("Spawned enemy: " .. chosenEnemy)
+    PrintToConsole("Spawned enemy: " .. chosenEnemy)
     -- Spawn 2 of the same random enemy with their levels scaling with map completion
     ExecuteInGameThread(function()
         local enemy1 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
@@ -670,13 +661,13 @@ function ForceEquipment()
     local currentDirectionalShard = RandomEquipment(inventory.myDirectionalShards)
     local currentEnchantShard = RandomEquipment(inventory.myEnchantShards)
     local currentFamiliarShard = RandomEquipment(inventory.myFamiliarShards)
-    print("Forced weapon: " .. currentWeapon:ToString())
-    print("Forced bullet: " .. currentBullet:ToString())
-    print("Forced trigger shard: " .. currentTriggerShard:ToString())
-    print("Forced effective shard: " .. currentEffectiveShard:ToString())
-    print("Forced directional shard: " .. currentDirectionalShard:ToString())
-    print("Forced enchant shard: " .. currentEnchantShard:ToString())
-    print("Forced familiar shard: " .. currentFamiliarShard:ToString())
+    PrintToConsole("Forced weapon: " .. currentWeapon:ToString())
+    PrintToConsole("Forced bullet: " .. currentBullet:ToString())
+    PrintToConsole("Forced trigger shard: " .. currentTriggerShard:ToString())
+    PrintToConsole("Forced effective shard: " .. currentEffectiveShard:ToString())
+    PrintToConsole("Forced directional shard: " .. currentDirectionalShard:ToString())
+    PrintToConsole("Forced enchant shard: " .. currentEnchantShard:ToString())
+    PrintToConsole("Forced familiar shard: " .. currentFamiliarShard:ToString())
     ExecuteInGameThread(function()
         interfaceHUD:DispShortcutMenu(true)
         EquipPlayerWeapon(currentWeapon, currentBullet)
@@ -749,7 +740,7 @@ function RandomEquipment(equipmentList)
     local validEquipment = {}
     local count = 0
     for index = 1,#equipmentList,1 do
-        if equipmentList[index].Num > 0 then
+        if equipmentList[index].Num >= 0 then
             count = count + 1
             validEquipment[count] = equipmentList[index].ID
         end
@@ -1039,8 +1030,6 @@ end)
 RegisterKeyBind(Key.F1, function()
     ToggleDisplayNotifications()
 end)
-
-print("CC script loaded")
 
 function isReady()
     return CanExecuteCommand()
