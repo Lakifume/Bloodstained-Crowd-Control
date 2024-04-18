@@ -30,7 +30,7 @@ shuffleControlsOriginalShortcut = nil
 shuffleControlsUnpausePreHook = nil
 shuffleControlsUnpausePostHook = nil
 
-goldRushMoneyGain = 0
+goldRushMoneyGain = nil
 goldRushDamagePopupPreHook = nil
 goldRushDamagePopupPostHook = nil
 goldRushDamagePopup = nil

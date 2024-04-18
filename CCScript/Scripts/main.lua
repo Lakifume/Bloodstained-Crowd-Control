@@ -324,9 +324,9 @@ function GoldRush()
         local damage = param1:get()
         local color = param2:get()
         if color.R == 1.0 and color.G== 1.0 and color.B == 1.0 then
-            local coinModifier = gameInstance.totalCoins/10000
-            local compModifier = Lerp(10, 1, gameInstance.pMapManager:GetRoomTraverseRate({})/100)
-            local quantity = math.max(1, math.floor(damage*math.max(0.1, coinModifier*compModifier)))
+            local coinModifier = math.max(0.1, gameInstance.totalCoins/6666)
+            local compModifier = Lerp(0.1, 1, gameInstance.pMapManager:GetRoomTraverseRate({})/100)
+            local quantity = math.max(1, math.floor(damage*(coinModifier/compModifier)))
             goldRushMoneyGain = goldRushMoneyGain + quantity
             goldRushDamagePopup:DisplayNumeric(math.min(goldRushMoneyGain, 99999))
         end
