@@ -829,10 +829,12 @@ function ReturnBooks()
     local inventory = player.CharacterInventory
     if #inventory.myBorrowedBooks < 1 then return false end
     NotifyCrowdControlCommand("Return Books")
-    for index = 1,#inventory.myBorrowedBooks,1 do
-        inventory:ReturnTheBook(inventory.myBorrowedBooks[1].ID)
-    end
-    PlayEnemySound("Vo_N2012_047_jp")
+    ExecuteInGameThread(function()
+        for index = 1,#inventory.myBorrowedBooks,1 do
+            inventory:ReturnTheBook(inventory.myBorrowedBooks[1].ID)
+        end
+        PlayEnemySound("Vo_N2012_047_jp")
+    end)
     return true
 end
 
