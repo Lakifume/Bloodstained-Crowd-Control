@@ -72,14 +72,6 @@ function SlamPlayer()
     return true
 end
 
-function UseWaystone()
-    if gameInstance:IsBossBattleNow() then return false end
-    NotifyCrowdControlCommand("Use Waystone")
-    local player = GetPlayerCharacter()
-    player.Step:SetSpecialEffect(FName("WayStone"))
-    return true
-end
-
 function EmptyHealth()
     local player = GetPlayerCharacter()
     if player.CharacterStatus.HitPoint <= 1 then return false end
@@ -142,6 +134,60 @@ function PlayDeathQuote()
     PrintToConsole("Played quote: " .. chosenVoice)
     PlayEnemySound(chosenVoice)
     return true
+end
+
+function ShrinkPlayer()
+    if sizeChangeActive then return false end
+    sizeChangeActive = true
+    sizeChangeCurrentModifier = 0.5
+    NotifyCrowdControlCommand("Shrink Player")
+    SetPlayerScale(false)
+    return true
+end
+
+function ShrinkPlayerEnd()
+    if not sizeChangeActive then return end
+    sizeChangeActive = false
+    PrintToConsole("ShrinkPlayerEnd")
+    if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
+end
+
+function GrowPlayer()
+    if sizeChangeActive then return false end
+    sizeChangeActive = true
+    sizeChangeCurrentModifier = 1.5
+    NotifyCrowdControlCommand("Grow Player")
+    SetPlayerScale(false)
+    return true
+end
+
+function GrowPlayerEnd()
+    if not sizeChangeActive then return end
+    sizeChangeActive = false
+    PrintToConsole("GrowPlayerEnd")
+    if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
+end
+
+function SetPlayerScale(resetScale)
+    local player = GetPlayerCharacter()
+    local effectiveShard = player.Step:GetEffectiveShard()
+    local scaleModifier = resetScale and 1.0 or sizeChangeCurrentModifier
+    local scaleVector = {X=scaleModifier, Y=scaleModifier, Z=scaleModifier}
+    player.MeshComponent:SetRelativeScale3D(scaleVector)
+    -- Update the Bunnymorphosis body scale
+    if effectiveShard:IsValid() then
+        if GetClassName(effectiveShard) == "EffectiveChangeBunny_C" then
+            effectiveShard.SK_ChangeBunny_Body:SetRelativeScale3D(scaleVector)
+        end
+    end
+    -- Reset the Accelerator effect scale
+    local bullets = FindAllOf("PBBulletActor")
+    for index = 1,#bullets,1 do
+        local bullet = bullets[index]
+        if bullet.CurrentBulletId == FName("P0000_DASH_EFFECT") then
+            bullet.SubActor:SetActorScale3D(scaleVector)
+        end
+    end
 end
 
 function FlipPlayer()
@@ -344,6 +390,14 @@ function GoldRushEnd()
     UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", goldRushDamagePopupPreHook, goldRushDamagePopupPostHook)
 end
 
+function UseWaystone()
+    if gameInstance:IsBossBattleNow() then return false end
+    NotifyCrowdControlCommand("Use Waystone")
+    local player = GetPlayerCharacter()
+    player.Step:SetSpecialEffect(FName("WayStone"))
+    return true
+end
+
 function UseRosario()
     local hasFoundTarget = false
     local actorInstances = FindAllOf("PBBaseCharacter")
@@ -378,6 +432,20 @@ function ScreenFlash(duration)
     ExecuteWithDelay(math.floor(subDuration*1000), function() cameraManager:StartCameraFade(1.0, 0.0, subDuration, {R=1.0, G=1.0, B=1.0}, false, false) end)
 end
 
+function RewindTime()
+    if gameInstance:IsBossBattleNow() then return false end
+    -- Warp in the last valid room traversed, 2 rooms back at most
+    local chosenRoom
+    if     previousRoom2 ~= nullName and not IsInList(rotatingRooms, previousRoom2:ToString()) then
+        chosenRoom = previousRoom2
+    elseif previousRoom1 ~= nullName and not IsInList(rotatingRooms, previousRoom1:ToString()) then
+        chosenRoom = previousRoom1
+    else return false end
+    NotifyCrowdControlCommand("Rewind Time")
+    ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
+    return true
+end
+
 function SummonAmbush()
     if IsInList(rotatingRooms, currentRoom:ToString()) then return false end
     NotifyCrowdControlCommand("Summon Ambush")
@@ -399,20 +467,6 @@ function SummonAmbush()
         enemy2.CharacterStatus:RecoverHitPoint()
         enemy2.Experience = 0
     end)
-    return true
-end
-
-function RewindTime()
-    if gameInstance:IsBossBattleNow() then return false end
-    -- Warp in the last valid room traversed, 2 rooms back at most
-    local chosenRoom
-    if     previousRoom2 ~= nullName and not IsInList(rotatingRooms, previousRoom2:ToString()) then
-        chosenRoom = previousRoom2
-    elseif previousRoom1 ~= nullName and not IsInList(rotatingRooms, previousRoom1:ToString()) then
-        chosenRoom = previousRoom1
-    else return false end
-    NotifyCrowdControlCommand("Rewind Time")
-    ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
     return true
 end
 
@@ -517,7 +571,6 @@ function NoSkillShards()
     if noSkillShardsActive then return false end
     noSkillShardsActive = true
     NotifyCrowdControlCommand("No Skill Shards")
-    local player = GetPlayerCharacter()
     SetAllSkillOnOff(false)
     -- Prevent the player from enabling them back
     noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
@@ -530,8 +583,7 @@ function NoSkillShardsEnd()
     if not noSkillShardsActive then return end
     noSkillShardsActive = false
     PrintToConsole("NoSkillShardsEnd")
-    local player = GetPlayerCharacter()
-    if player:IsValid() then SetAllSkillOnOff(true) end
+    if GetPlayerCharacter():IsValid() then SetAllSkillOnOff(true) end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook)
 end
 
@@ -862,7 +914,7 @@ function StartSaveRoomBoss()
     -- Watch the damage to despawn the boss before he truly dies
     local preId, postId
     preId, postId = RegisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", function()
-        if GetCharacterHealthRatio(bossOD) <= 1 - 6666/7500 then
+        if GetCharacterHealthRatio(bossOD) <= 1/3 then
             EndSaveRoomBoss(bossOD)
             UnregisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", preId, postId)
         end
@@ -975,8 +1027,17 @@ function PlayEnemySound(soundID)
     gameInstance.pSoundManager:GroupRelease(category, augment)
 end
 
+-- Update the Bunnymorphosis body scale if necessary
+NotifyOnNewObject("/Script/ProjectBlood.PBBulletSubActorBase", function(ConstructedObject)
+	if GetClassName(ConstructedObject) == "EffectiveChangeBunny_C" and sizeChangeActive then
+		ConstructedObject.SK_ChangeBunny_Body:SetRelativeScale3D({X=sizeChangeCurrentModifier, Y=sizeChangeCurrentModifier, Z=sizeChangeCurrentModifier})
+	end
+end)
+
 -- End all effects
 function StopAllEffects()
+    ShrinkPlayerEnd()
+    GrowPlayerEnd()
     FlipPlayerEnd()
     ShuffleControlsEnd()
     UseWitchTimeEnd()
@@ -998,6 +1059,8 @@ end
 
 -- Stop all effects if the game goes to a loading screen
 RegisterHook("/Script/ProjectBlood.PBLoadingManager:Init", function()
+    ShrinkPlayerEnd()
+    GrowPlayerEnd()
     FlipPlayerEnd()
     ShuffleControlsEnd()
     UseWitchTimeEnd()

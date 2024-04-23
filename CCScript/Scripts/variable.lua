@@ -1,5 +1,6 @@
 displayNotifications = true
 
+sizeChangeActive = false
 flipPlayerActive = false
 shuffleControlsActive = false
 useWitchTimeActive = false
@@ -16,6 +17,8 @@ shardsOnlyActive = false
 forceEquipmentActive = false
 heavenOrHellActive = false
 orlokStandbyActive = false
+
+sizeChangeCurrentModifier = nil
 
 flipPlayerRoomChangePreHook = nil
 flipPlayerRoomChangePostHook = nil
