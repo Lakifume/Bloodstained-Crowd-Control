@@ -428,8 +428,8 @@ function ScreenFlash(duration)
     local player = GetPlayerCharacter()
     local cameraManager = gameplayStatics:GetPlayerCameraManager(player, 0)
     local subDuration = duration/2
-    cameraManager:StartCameraFade(0.0, 1.0, subDuration, {R=1.0, G=1.0, B=1.0}, false, true)
-    ExecuteWithDelay(math.floor(subDuration*1000), function() cameraManager:StartCameraFade(1.0, 0.0, subDuration, {R=1.0, G=1.0, B=1.0}, false, false) end)
+    cameraManager:StartCameraFade(0.0, 1.0, subDuration, {R=1.0, G=1.0, B=0.0}, false, true)
+    ExecuteWithDelay(math.floor(subDuration*1000), function() cameraManager:StartCameraFade(1.0, 0.0, subDuration, {R=1.0, G=1.0, B=0.0}, false, false) end)
 end
 
 function RewindTime()
