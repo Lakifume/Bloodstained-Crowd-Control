@@ -463,9 +463,11 @@ function SummonAmbush()
         enemy1:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
         enemy1.CharacterStatus:RecoverHitPoint()
         enemy1.Experience = 0
+        enemy1.DropID = nullName
         enemy2:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
         enemy2.CharacterStatus:RecoverHitPoint()
         enemy2.Experience = 0
+        enemy2.DropID = nullName
     end)
     return true
 end
