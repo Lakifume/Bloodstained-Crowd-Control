@@ -5,12 +5,12 @@ require("variable")
 function CanExecuteCommand()
     local player = GetPlayerCharacter()
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
-    if not IsInList({1, 6, 9}, gameInstance:GetGameModeType()) then return false end
+    if not IsInList({1, 6, 9}, GetGameInstance():GetGameModeType()) then return false end
     if not player:IsValid() then return false end
     if not IsCharacterAlive(player) then return false end 
     if not interfaceHUD:IsValid() then return false end
     if not interfaceHUD:GetGaugeWidget():GetIsVisible() then return false end
-    if gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then return false end
+    if GetGameInstance().LoadingManagerInstance:IsLoadingScreenVisible() then return false end
     return true
 end
 
@@ -111,11 +111,11 @@ function ShuffleColors()
     ExecuteInGameThread(function()
         for index = 1,6,1 do
             for subindex = 0,2,1 do
-                player:SetChromaWheelColorScheme(index, {R=math.random(), G=math.random(), B=math.random()}, subindex, false, false, false)
+                player:SetChromaWheelColorScheme(index, {R=math.random(), G=math.random(), B=math.random()}, subindex)
             end
         end
-        player:SetChromaWheelTrim(3, math.random(1, 36), false, false)
-        gameInstance.m_SystemSettings:SetBloodColor(math.random(0, 11))
+        player:SetChromaWheelTrim(3, math.random(1, 36))
+        GetGameInstance().m_SystemSettings:SetBloodColor(math.random(0, 11))
     end)
     return true
 end
@@ -239,22 +239,22 @@ function ShuffleControls()
     local currentDirectional = PickAndRemove(controlList)
     local currentEffective = PickAndRemove(controlList)
     local currentShortcut = PickAndRemove(controlList)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(2, currentJump)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(3, currentTrigger)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(4, currentDirectional)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(5, currentEffective)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(7, currentShortcut)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(2, currentJump)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(3, currentTrigger)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(4, currentDirectional)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(5, currentEffective)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(7, currentShortcut)
     -- Prevent the player from changing them back
     shuffleControlsUnpausePreHook, shuffleControlsUnpausePostHook = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(2, currentJump)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(3, currentTrigger)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(4, currentDirectional)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(5, currentEffective)
-        gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(7, currentShortcut)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(2, currentJump)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(3, currentTrigger)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(4, currentDirectional)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(5, currentEffective)
+        GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(7, currentShortcut)
     end)
     return true
 end
@@ -263,13 +263,13 @@ function ShuffleControlsEnd()
     if not shuffleControlsActive then return end
     shuffleControlsActive = false
     PrintToConsole("ShuffleControlsEnd")
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(0, shuffleControlsOriginalAttack)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(1, shuffleControlsOriginalBackstep)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(2, shuffleControlsOriginalJump)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(3, shuffleControlsOriginalTrigger)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(4, shuffleControlsOriginalDirectional)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(5, shuffleControlsOriginalEffective)
-    gameInstance.m_SystemSettings:BindToGamepad_NO_CHECK(7, shuffleControlsOriginalShortcut)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(0, shuffleControlsOriginalAttack)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(1, shuffleControlsOriginalBackstep)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(2, shuffleControlsOriginalJump)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(3, shuffleControlsOriginalTrigger)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(4, shuffleControlsOriginalDirectional)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(5, shuffleControlsOriginalEffective)
+    GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(7, shuffleControlsOriginalShortcut)
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", shuffleControlsUnpausePreHook, shuffleControlsUnpausePostHook)
 end
 
@@ -370,8 +370,8 @@ function GoldRush()
         local damage = param1:get()
         local color = param2:get()
         if color.R == 1.0 and color.G== 1.0 and color.B == 1.0 then
-            local coinModifier = math.max(0.1, gameInstance.totalCoins/6666)
-            local compModifier = Lerp(0.1, 1, gameInstance.pMapManager:GetRoomTraverseRate({})/100)
+            local coinModifier = math.max(0.1, GetGameInstance().totalCoins/6666)
+            local compModifier = Lerp(0.1, 1, GetGameInstance().pMapManager:GetRoomTraverseRate({})/100)
             local quantity = math.max(1, math.floor(damage*(coinModifier/compModifier)))
             goldRushMoneyGain = goldRushMoneyGain + quantity
             goldRushDamagePopup:DisplayNumeric(math.min(goldRushMoneyGain, 99999))
@@ -384,14 +384,14 @@ function GoldRushEnd()
     if not goldRushActive then return end
     goldRushActive = false
     PrintToConsole("GoldRushEnd")
-    gameInstance:SetTotalCoin(goldRushMoneyGain)
+    GetGameInstance():SetTotalCoin(goldRushMoneyGain)
     if goldRushDamagePopup:IsValid() then goldRushDamagePopup:RemoveFromViewport() end
     if GetPlayerCharacter():IsValid() then PlayEnemySound(goldRushMoneyGain > 0 and "SE_N1004_Coin02" or "Vo_N1004_040_jp") end
     UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", goldRushDamagePopupPreHook, goldRushDamagePopupPostHook)
 end
 
 function UseWaystone()
-    if gameInstance:IsBossBattleNow() then return false end
+    if GetGameInstance():IsBossBattleNow() then return false end
     NotifyCrowdControlCommand("Use Waystone")
     local player = GetPlayerCharacter()
     player.Step:SetSpecialEffect(FName("WayStone"))
@@ -433,7 +433,7 @@ function ScreenFlash(duration)
 end
 
 function RewindTime()
-    if gameInstance:IsBossBattleNow() then return false end
+    if GetGameInstance():IsBossBattleNow() then return false end
     -- Warp in the last valid room traversed, 2 rooms back at most
     local chosenRoom
     if     previousRoom2 ~= nullName and not IsInList(rotatingRooms, previousRoom2:ToString()) then
@@ -442,7 +442,7 @@ function RewindTime()
         chosenRoom = previousRoom1
     else return false end
     NotifyCrowdControlCommand("Rewind Time")
-    ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
+    ExecuteInGameThread(function() GetGameInstance().pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
     return true
 end
 
@@ -452,12 +452,12 @@ function SummonAmbush()
     local player = GetPlayerCharacter()
     local playerLocation = player:K2_GetActorLocation()
     local chosenEnemy = RandomChoice(enemylist)
-    local enemyLevel = gameInstance.pMapManager:GetRoomTraverseRate({})//2
+    local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
     PrintToConsole("Spawned enemy: " .. chosenEnemy)
     -- Spawn 2 of the same random enemy with their levels scaling with map completion
     ExecuteInGameThread(function()
-        local enemy1 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
-        local enemy2 = gameInstance.pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
+        local enemy1 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
+        local enemy2 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
         if not enemy1:IsValid() or not enemy2:IsValid() then return false end
         enemy1:SetCharacterWorldRotation(180.0, 0.0)
         enemy1:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
@@ -606,11 +606,11 @@ function WeaponsOnly()
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
-    equipmentChangeOriginalTrigger = inventory.netEquipment.TriggerShard
-    equipmentChangeOriginalEffective = inventory.netEquipment.EffectiveShard
-    equipmentChangeOriginalDirectional = inventory.netEquipment.DirectionalShard
-    equipmentChangeOriginalEnchant = inventory.netEquipment.EnchantShard
-    equipmentChangeOriginalFamiliar = inventory.netEquipment.FamiliarShard
+    equipmentChangeOriginalTrigger = inventory.aEquipShortcuts.TriggerShard
+    equipmentChangeOriginalEffective = inventory.aEquipShortcuts.EffectiveShard
+    equipmentChangeOriginalDirectional = inventory.aEquipShortcuts.DirectionalShard
+    equipmentChangeOriginalEnchant = inventory.aEquipShortcuts.EnchantShard
+    equipmentChangeOriginalFamiliar = inventory.aEquipShortcuts.FamiliarShard
     ExecuteInGameThread(function()
         interfaceHUD:DispShortcutMenu(true)
         UnequipPlayerShards()
@@ -655,8 +655,8 @@ function ShardsOnly()
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
-    equipmentChangeOriginalWeapon = inventory.netEquipment.weapon
-    equipmentChangeOriginalBullet = inventory.netEquipment.Bullet
+    equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
+    equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
     ExecuteInGameThread(function()
         interfaceHUD:DispShortcutMenu(true)
         UnequipPlayerWeapon()
@@ -701,13 +701,13 @@ function ForceEquipment()
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
-    equipmentChangeOriginalWeapon = inventory.netEquipment.weapon
-    equipmentChangeOriginalBullet = inventory.netEquipment.Bullet
-    equipmentChangeOriginalTrigger = inventory.netEquipment.TriggerShard
-    equipmentChangeOriginalEffective = inventory.netEquipment.EffectiveShard
-    equipmentChangeOriginalDirectional = inventory.netEquipment.DirectionalShard
-    equipmentChangeOriginalEnchant = inventory.netEquipment.EnchantShard
-    equipmentChangeOriginalFamiliar = inventory.netEquipment.FamiliarShard
+    equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
+    equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
+    equipmentChangeOriginalTrigger = inventory.aEquipShortcuts.TriggerShard
+    equipmentChangeOriginalEffective = inventory.aEquipShortcuts.EffectiveShard
+    equipmentChangeOriginalDirectional = inventory.aEquipShortcuts.DirectionalShard
+    equipmentChangeOriginalEnchant = inventory.aEquipShortcuts.EnchantShard
+    equipmentChangeOriginalFamiliar = inventory.aEquipShortcuts.FamiliarShard
     local currentWeapon = RandomEquipment(inventory.myWeapons)
     local currentBullet = RandomEquipment(inventory.myBullets)
     local currentTriggerShard = RandomEquipment(inventory.myTriggerShards)
@@ -842,10 +842,10 @@ end
 
 function CallTheLibrary()
     -- If OD has been defeated then simply warp to library
-    if gameInstance:IsCompletedBoss(FName("N2012")) then
-        if gameInstance:IsBossBattleNow() then return false end
+    if GetGameInstance():IsCompletedBoss(FName("N2012")) then
+        if GetGameInstance():IsBossBattleNow() then return false end
         NotifyCrowdControlCommand("Call The Library")
-        ExecuteInGameThread(function() gameInstance.pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {}) end)
+        ExecuteInGameThread(function() GetGameInstance().pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {}) end)
         return true
     end
     -- Otherwise put OD on standby in the next save room entered
@@ -853,7 +853,7 @@ function CallTheLibrary()
     orlokStandbyActive = true
     NotifyCrowdControlCommand("Call The Library")
     orlokStandbySaveRoomPreHook, orlokStandbySaveRoomPostHook = RegisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", function()
-        if not gameInstance.LoadingManagerInstance:IsLoadingScreenVisible() then
+        if not GetGameInstance().LoadingManagerInstance:IsLoadingScreenVisible() then
             orlokStandbyActive = false
             ExecuteInGameThread(StartSaveRoomBoss)
             UnregisterHook("/Game/Core/UI/Tutorial/TutorialAPI.TutorialAPI_C:OnSaveRoomEntered", orlokStandbySaveRoomPreHook, orlokStandbySaveRoomPostHook)
@@ -873,7 +873,7 @@ function StartSaveRoomBoss()
     local player = GetPlayerCharacter()
     local playerLocation = player:K2_GetActorLocation()
     -- Turn off room transitions
-    gameInstance.pRoomManager:SetDisableRoomChangeByCameraOut(true)
+    GetGameInstance().pRoomManager:SetDisableRoomChangeByCameraOut(true)
     -- Turn off saving
     local saveBoxes = FindAllOf("PBSaveBox_BP_C")
     for index = 1,#saveBoxes,1 do
@@ -891,7 +891,7 @@ function StartSaveRoomBoss()
     -- Spawn boss doors
     local doorClass = FindValidActorClass("/Game/Core/Environment/Gimmick/NewGimmicks/BossDoorBase/PBBossDoor_BP.PBBossDoor_BP_C")
     local doorPosX, doorPosZ = RelativeToAbsoluteLocation(0.0, 240.0)
-    local leftDoor = gameInstance.pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {}, player)
+    local leftDoor = GetGameInstance().pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {}, player)
     leftDoor:K2_AddActorWorldRotation({Yaw=-180}, false, {}, false)
     leftDoor.InBossRoom = true
     leftDoor.BossId = FName(bossID)
@@ -899,16 +899,16 @@ function StartSaveRoomBoss()
     leftDoor.YScale = 2
     leftDoor.Tags[1] = FName("CC")
     local doorPosX, doorPosZ = RelativeToAbsoluteLocation(1260.0, 240.0)
-    local rightDoor = gameInstance.pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {}, player)
+    local rightDoor = GetGameInstance().pEventManager:CreateEventObject(doorClass, {X=doorPosX, Z=doorPosZ}, {}, player)
     rightDoor.InBossRoom = true
     rightDoor.BossId = FName(bossID)
     rightDoor.IsRight = true
     rightDoor.YScale = 2
     rightDoor.Tags[1] = FName("CC")
     -- Spawn OD
-    local enemyLevel = gameInstance.pMapManager:GetRoomTraverseRate({})//2
+    local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
     local bossPosX, bossPosZ = RelativeToAbsoluteLocation(630.0, 120.0)
-    local bossOD = gameInstance.pCharacterManager:CreateCharacter(FName(bossID), "", {X=bossPosX, Z=bossPosZ}, {}, 1, "", nil, false)
+    local bossOD = GetGameInstance().pCharacterManager:CreateCharacter(FName(bossID), "", {X=bossPosX, Z=bossPosZ}, {}, 1, "", nil, false)
     bossOD:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
     bossOD.CharacterStatus:RecoverHitPoint()
     bossOD.Experience = 0
@@ -939,7 +939,7 @@ function EndSaveRoomBoss(bossOD)
             saveBoxes[index].HasBeenUsed = false
         end
         -- Turn room transitions back on
-        gameInstance.pRoomManager:SetDisableRoomChangeByCameraOut(false)
+        GetGameInstance().pRoomManager:SetDisableRoomChangeByCameraOut(false)
     end)
 end
 
@@ -1023,12 +1023,12 @@ function PlayEnemySound(soundID)
     local category = splitSound[1] == "Vo" and "VOICE" or "ENEMY"
     local augment = splitSound[2]
     -- Need to do it twice for consistency
-    gameInstance.pSoundManager:GroupLoad(category, augment)
-    gameInstance.pSoundManager:PlaySEForBP(FName(soundID), player)
-    gameInstance.pSoundManager:GroupRelease(category, augment)
-    gameInstance.pSoundManager:GroupLoad(category, augment)
-    gameInstance.pSoundManager:PlaySEForBP(FName(soundID), player)
-    gameInstance.pSoundManager:GroupRelease(category, augment)
+    GetGameInstance().pSoundManager:GroupLoad(category, augment)
+    GetGameInstance().pSoundManager:PlaySEForBP(FName(soundID), player)
+    GetGameInstance().pSoundManager:GroupRelease(category, augment)
+    GetGameInstance().pSoundManager:GroupLoad(category, augment)
+    GetGameInstance().pSoundManager:PlaySEForBP(FName(soundID), player)
+    GetGameInstance().pSoundManager:GroupRelease(category, augment)
 end
 
 -- Update the Bunnymorphosis body scale if necessary

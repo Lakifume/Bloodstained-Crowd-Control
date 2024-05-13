@@ -1,9 +1,9 @@
 local UEHelpers = require("UEHelpers")
+local gameInstance = FindFirstOf("PBGameInstance")
 
 nullName = FName("None")
 mathLibrary = UEHelpers:GetKismetMathLibrary(false)
 gameplayStatics = UEHelpers:GetGameplayStatics(false)
-gameInstance = FindFirstOf("PBGameInstance")
 utilityClass = StaticFindObject("/Script/ProjectBlood.PBUtility")
 utility = StaticConstructObject(utilityClass, gameInstance, 0, 0, 0, nil, false, false, nil)
 eventUtilityClass = StaticFindObject("/Script/ProjectBlood.PBEventUtility")
@@ -25,7 +25,7 @@ end
 ResetRoomHistory()
 
 RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
-    local tempRoom = gameInstance.pRoomManager:GetCurrentRoomId()
+    local tempRoom = GetGameInstance().pRoomManager:GetCurrentRoomId()
     if currentRoom ~= tempRoom then
         if previousRoom1 ~= tempRoom then
             previousRoom2 = previousRoom1
@@ -35,8 +35,15 @@ RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", functio
     end
 end)
 
+function GetGameInstance()
+    if not gameInstance:IsValid() then
+        gameInstance = FindFirstOf("PBGameInstance")
+    end
+    return gameInstance
+end
+
 function GetPlayerCharacter()
-    return gameInstance:GetPlayerCharacter(0)
+    return GetGameInstance():GetPlayerCharacter(0)
 end
 
 function GetClassName(object)
@@ -57,7 +64,7 @@ end
 
 function GetCurrentRoomProperties()
     local datatableRow = {}
-    local datatable = gameInstance.pMapManager.RoomMasterTable
+    local datatable = GetGameInstance().pMapManager.RoomMasterTable
     datatableUtility:GetDataTableRowFromName(datatable, currentRoom, datatableRow)
     return datatableRow.OutRow
 end
