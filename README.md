@@ -26,7 +26,7 @@ For best results it is recommended to combine this with True Randomization: http
 | Turbo Enemies        | They move so fast !                                                                                               | 16    | 30s      | 1        |
 | Uncontrollable Speed | The problem with being faster than light is that you can only live in darkness                                    | 8     | 30s      | -        |
 | Critical Mode        | Every player attack is a guaranteed crit, however defense will be set to 0                                        | 8     | 30s      | -        |
-| Gold Rush            | Call upon the player's thirst for gold, converting damage dealt to money at the cost of draining their currency   | 16    | 60s      | -        |
+| Gold Rush            | Call upon the player's thirst for gold, converting damage dealt to money to reset their currency                  | 16    | 60s      | -        |
 | Use Waystone         | Send the player back to Johannes for a health check-up. Still has no effect during boss fights                    | 64    | ---      | -        |
 | Use Rosario          | Kill every enemy on the current screen. If it's a boss it will only inflict damage                                | 16    | ---      | -        |
 | Rewind Time          | Warp the player 2 rooms backwards. Does not work during boss fights                                               | 16    | ---      | -        |
