@@ -34,7 +34,7 @@ function PoisonPlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusPoisoned({}, {}) then return false end
     NotifyCrowdControlCommand("Poison Player")
-    player.Step:SetSpecialEffect(FName("Poison"))
+    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Poison")) end)
     return true
 end
 
@@ -42,7 +42,7 @@ function CursePlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusCursed({}, {}) then return false end
     NotifyCrowdControlCommand("Curse Player")
-    player.Step:SetSpecialEffect(FName("Curse"))
+    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Curse")) end)
     return true
 end
 
@@ -50,7 +50,7 @@ function PetrifyPlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusStoned({}) then return false end
     NotifyCrowdControlCommand("Petrify Player")
-    player.Step:SetSpecialEffect(FName("Stone"))
+    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Stone")) end)
     return true
 end
 
@@ -58,7 +58,7 @@ function SlowPlayerDown()
     local player = GetPlayerCharacter()
     if player:IsStatusSlowed({}, {}) then return false end
     NotifyCrowdControlCommand("Slow Player Down")
-    player.Step:SetSpecialEffect(FName("Slow"))
+    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Slow")) end)
     return true
 end
 
@@ -68,7 +68,7 @@ function SlamPlayer()
     if player.CharacterStatus.HitPoint <= 1 then return false end
     if not player.Step:CanUpdateNextHitTimer() then return false end
     NotifyCrowdControlCommand("Slam Player")
-    player:DirectDamageWithId(1.0, FName("N2008_BackStep"))
+    ExecuteInGameThread(function() player:DirectDamageWithId(1.0, FName("N2008_BackStep")) end)
     return true
 end
 
@@ -76,7 +76,7 @@ function EmptyHealth()
     local player = GetPlayerCharacter()
     if player.CharacterStatus.HitPoint <= 1 then return false end
     NotifyCrowdControlCommand("Empty Health")
-    player.CharacterStatus:SetHitPointForce(1)
+    ExecuteInGameThread(function() player.CharacterStatus:SetHitPointForce(1) end)
     return true
 end
 
@@ -84,7 +84,7 @@ function EmptyMagic()
     local player = GetPlayerCharacter()
     if player.CharacterStatus.MagicPoint <= 1 then return false end
     NotifyCrowdControlCommand("Empty Magic")
-    player.CharacterStatus:SetMagicPointForce(1)
+    ExecuteInGameThread(function() player.CharacterStatus:SetMagicPointForce(1) end)
     return true
 end
 
@@ -92,7 +92,7 @@ function RefillHealth()
     local player = GetPlayerCharacter()
     if GetCharacterHealthRatio(player) >= 1.0 then return false end
     NotifyCrowdControlCommand("Refill Health")
-    player.CharacterStatus:RecoverHitPoint()
+    ExecuteInGameThread(function() player.CharacterStatus:RecoverHitPoint() end)
     return true
 end
 
@@ -100,7 +100,7 @@ function RefillMagic()
     local player = GetPlayerCharacter()
     if GetCharacterMagicRatio(player) >= 1.0 then return false end
     NotifyCrowdControlCommand("Refill Magic")
-    player.CharacterStatus:RecoverMagicPoint()
+    ExecuteInGameThread(function() player.CharacterStatus:RecoverMagicPoint() end)
     return true
 end
 
@@ -123,7 +123,7 @@ end
 function FakeFlawlessWin()
     NotifyCrowdControlCommand("Fake Flawless Win")
     local player = GetPlayerCharacter()
-    player.Step:NoticeBossBattleNoDamageWin(nullName)
+    ExecuteInGameThread(function() player.Step:NoticeBossBattleNoDamageWin(nullName) end)
     return true
 end
 
@@ -194,10 +194,10 @@ function FlipPlayer()
     if flipPlayerActive then return false end
     flipPlayerActive = true
     NotifyCrowdControlCommand("Flip Player")
-    utility:SetLeftAnalogMirrorFlag(true)
+    ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(true) end)
     -- Switching rooms breaks it so enable it back
     flipPlayerRoomChangePreHook, flipPlayerRoomChangePostHook = RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
-        utility:SetLeftAnalogMirrorFlag(true)
+        ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(true) end)
     end)
     return true
 end
@@ -206,7 +206,7 @@ function FlipPlayerEnd()
     if not flipPlayerActive then return end
     flipPlayerActive = false
     PrintToConsole("FlipPlayerEnd")
-    utility:SetLeftAnalogMirrorFlag(false)
+    ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(false) end)
     UnregisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", flipPlayerRoomChangePreHook, flipPlayerRoomChangePostHook)
 end
 
@@ -280,11 +280,13 @@ function UseWitchTime()
     NotifyCrowdControlCommand("Use Witch Time")
     local player = GetPlayerCharacter()
     local rate = 0.25
-    utility:PBCategorySlomo(1, 0, rate, player)
-    utility:PBCategorySlomo(2, 0, rate, player)
-    utility:PBCategorySlomo(3, 0, rate, player)
-    utility:PBCategorySlomo(4, 0, rate, player)
-    utility:PBActorSlomo(player, 0, 1.0)
+    ExecuteInGameThread(function()
+        utility:PBCategorySlomo(1, 0, rate, player)
+        utility:PBCategorySlomo(2, 0, rate, player)
+        utility:PBCategorySlomo(3, 0, rate, player)
+        utility:PBCategorySlomo(4, 0, rate, player)
+        utility:PBActorSlomo(player, 0, 1.0)
+    end)
     return true
 end
 
@@ -293,7 +295,9 @@ function UseWitchTimeEnd()
     useWitchTimeActive = false
     PrintToConsole("UseWitchTimeEnd")
     local player = GetPlayerCharacter()
-    if player:IsValid() then utility:PBCategorySlomo(7, 0, 1.0, player) end
+    if player:IsValid() then
+        ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
+    end
 end
 
 function TurboEnemies()
@@ -303,8 +307,10 @@ function TurboEnemies()
     NotifyCrowdControlCommand("Turbo Enemies")
     local rate = 2.0
     local player = GetPlayerCharacter()
-    utility:PBCategorySlomo(1, 0, rate, player)
-    utility:PBActorSlomo(player, 0, 1.0)
+    ExecuteInGameThread(function()
+        utility:PBCategorySlomo(1, 0, rate, player)
+        utility:PBActorSlomo(player, 0, 1.0)
+    end)
     return true
 end
 
@@ -313,7 +319,9 @@ function TurboEnemiesEnd()
     turboEnemiesActive = false
     PrintToConsole("UseWitchTimeEnd")
     local player = GetPlayerCharacter()
-    if player:IsValid() then utility:PBCategorySlomo(7, 0, 1.0, player) end
+    if player:IsValid() then
+        ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
+    end
 end
 
 function UncontrollableSpeed()
@@ -394,32 +402,40 @@ function UseWaystone()
     if GetGameInstance():IsBossBattleNow() then return false end
     NotifyCrowdControlCommand("Use Waystone")
     local player = GetPlayerCharacter()
-    player.Step:SetSpecialEffect(FName("WayStone"))
+    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("WayStone")) end)
     return true
 end
 
 function UseRosario()
-    local hasFoundTarget = false
+    local enemiesToKill = {}
+    local enemiesToDamage = {}
     local actorInstances = FindAllOf("PBBaseCharacter")
-    -- All enemies found will be defeated instantly
-    -- All bosses found will be dealt 15% of health
+    -- Gather lists of enemies to kill and bosses to damage
     for index = 1,#actorInstances,1 do
         local actor = actorInstances[index]
         if actor:IsValid() then
             if actor.OnTheScreen and IsCharacterAlive(actor) then
-                if actor:IsBoss()then
-                    actor:DirectDamage(math.floor(actor.CharacterStatus:GetMaxHitPoint()*0.15))
-                    hasFoundTarget = true
-                elseif actor:IsEnemy() then
-                    actor:DirectDamage(actor.CharacterStatus.HitPoint)
-                    hasFoundTarget = true
-                end
+                if actor:IsBoss() then table.insert(enemiesToDamage, actor) elseif actor:IsEnemy() then table.insert(enemiesToKill, actor) end
             end
         end
     end
+    -- Only execute if a target was found
+    local hasFoundTarget = #enemiesToKill > 0 or #enemiesToDamage > 0
     if hasFoundTarget then
         NotifyCrowdControlCommand("Use Rosario")
-        ScreenFlash(0.3)
+        ExecuteInGameThread(function()
+            -- All enemies found will be defeated instantly
+            for index = 1,#enemiesToKill,1 do
+                local enemy = enemiesToKill[index]
+                if enemy:IsValid() then enemy:DirectDamage(enemy.CharacterStatus.HitPoint) end
+            end
+            -- All bosses found will be dealt 15% of health
+            for index = 1,#enemiesToDamage,1 do
+                local enemy = enemiesToDamage[index]
+                if enemy:IsValid() then enemy:DirectDamage(math.floor(enemy.CharacterStatus:GetMaxHitPoint()*0.15)) end
+            end
+            ScreenFlash(0.3)
+        end)
     end
     return hasFoundTarget
 end
@@ -448,9 +464,11 @@ end
 
 function SummonAmbush()
     if IsInList(rotatingRooms, currentRoom:ToString()) then return false end
-    NotifyCrowdControlCommand("Summon Ambush")
     local player = GetPlayerCharacter()
     local playerLocation = player:K2_GetActorLocation()
+    local playerScreenPosition = player:GetScreenPosition()
+    if playerScreenPosition.X < 1/3 or playerScreenPosition.X > 2/3 then return false end
+    NotifyCrowdControlCommand("Summon Ambush")
     local chosenEnemy = RandomChoice(enemylist)
     local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
     PrintToConsole("Spawned enemy: " .. chosenEnemy)
@@ -537,7 +555,7 @@ end
 function TriggerEarthquake(duration)
     local player = GetPlayerCharacter()
     NotifyCrowdControlCommand("Trigger Earthquake")
-    player.Step:CameraShake(duration/1000, 0.15, 60.0, 0.3, 40.0, 0.0, 0.0, player.criticalForceFeedback, nullName, false, nullName)
+    ExecuteInGameThread(function() player.Step:CameraShake(duration/1000, 0.15, 60.0, 0.3, 40.0, 0.0, 0.0, player.criticalForceFeedback, nullName, false, nullName) end)
     return true
 end
 
@@ -547,11 +565,13 @@ function ForceInvert()
     NotifyCrowdControlCommand("Force Invert")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
-    if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
-    inventory:SetSkillOnOff(FName("Invert"), false)
+    ExecuteInGameThread(function() 
+        if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
+        inventory:SetSkillOnOff(FName("Invert"), false)
+    end)
     -- Prevent the player from enabling it back
     forceInvertUnpausePreHook, forceInvertUnpausePostHook = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
-        inventory:SetSkillOnOff(FName("Invert"), false)
+        ExecuteInGameThread(function() inventory:SetSkillOnOff(FName("Invert"), false) end)
     end)
     return true
 end
@@ -563,8 +583,10 @@ function ForceInvertEnd()
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     if player:IsValid() then
-        if eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
-        if ItemInInventory(inventory.mySkills, "Invert") then inventory:SetSkillOnOff(FName("Invert"), true) end
+        ExecuteInGameThread(function() 
+            if eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
+            if ItemInInventory(inventory.mySkills, "Invert") then inventory:SetSkillOnOff(FName("Invert"), true) end
+        end)
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", forceInvertUnpausePreHook, forceInvertUnpausePostHook)
 end
@@ -573,10 +595,10 @@ function NoSkillShards()
     if noSkillShardsActive then return false end
     noSkillShardsActive = true
     NotifyCrowdControlCommand("No Skill Shards")
-    SetAllSkillOnOff(false)
+    ExecuteInGameThread(function() SetAllSkillOnOff(false) end)
     -- Prevent the player from enabling them back
     noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
-        SetAllSkillOnOff(false)
+        ExecuteInGameThread(function() SetAllSkillOnOff(false) end)
     end)
     return true
 end
@@ -585,7 +607,9 @@ function NoSkillShardsEnd()
     if not noSkillShardsActive then return end
     noSkillShardsActive = false
     PrintToConsole("NoSkillShardsEnd")
-    if GetPlayerCharacter():IsValid() then SetAllSkillOnOff(true) end
+    if GetPlayerCharacter():IsValid() then
+        ExecuteInGameThread(function() SetAllSkillOnOff(true) end)
+    end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook)
 end
 
@@ -813,7 +837,9 @@ function HeavenOrHell()
     local isInvincible = math.random() < 0.5
     ModifyEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69}, isInvincible and 100.0 or -100.0, false)
     heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook = RegisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", function(self)
-        if not isInvincible and GetClassName(self:get()) == GetClassName(player.Step) then player.Step:Kill() end
+        if not isInvincible and GetClassName(self:get()) == GetClassName(player.Step) then
+            ExecuteInGameThread(function() player.Step:Kill() end)
+        end
     end)
     return true
 end
@@ -1013,8 +1039,9 @@ function RestoreEquipSpecialAttribute(attributes)
         end
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", modifyAttributeUnpausePreHook[attributes[1]], modifyAttributeUnpausePostHook[attributes[1]])
-    UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", modifyAttributeBorrowPreHook[attributes[1]], modifyAttributeBorrowPostHook[attributes[1]])
     UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", modifyAttributeShortcutPreHook[attributes[1]], modifyAttributeShortcutPostHook[attributes[1]])
+    UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:BorrowTheBook", modifyAttributeBorrowPreHook[attributes[1]], modifyAttributeBorrowPostHook[attributes[1]])
+    UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ReturnTheBook", modifyAttributeReturnPreHook[attributes[1]], modifyAttributeReturnPostHook[attributes[1]])
 end
 
 function PlayEnemySound(soundID)
