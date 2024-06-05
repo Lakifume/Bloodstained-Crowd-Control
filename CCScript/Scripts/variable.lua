@@ -1,3 +1,5 @@
+timedEffects = {}
+
 displayNotifications = true
 
 sizeChangeActive = false

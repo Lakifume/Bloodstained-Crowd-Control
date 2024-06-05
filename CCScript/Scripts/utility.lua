@@ -146,9 +146,3 @@ function PickAndRemove(list)
     table.remove(list, chosenIndex)
     return chosenItem
 end
-
-function PrintToConsole(...)
-    local param = tostring(...)
-    if (...).ToString ~= nil then param = (...):ToString() end
-    print(param)
-end

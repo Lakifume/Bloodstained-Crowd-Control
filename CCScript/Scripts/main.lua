@@ -131,7 +131,7 @@ function PlayDeathQuote()
     NotifyCrowdControlCommand("Play Death Quote")
     local player = GetPlayerCharacter()
     local chosenVoice = RandomChoice(voicelist)
-    PrintToConsole("Played quote: " .. chosenVoice)
+    print("Played quote: " .. chosenVoice)
     PlayEnemySound(chosenVoice)
     return true
 end
@@ -148,7 +148,6 @@ end
 function ShrinkPlayerEnd()
     if not sizeChangeActive then return end
     sizeChangeActive = false
-    PrintToConsole("ShrinkPlayerEnd")
     if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
 end
 
@@ -164,7 +163,6 @@ end
 function GrowPlayerEnd()
     if not sizeChangeActive then return end
     sizeChangeActive = false
-    PrintToConsole("GrowPlayerEnd")
     if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
 end
 
@@ -205,7 +203,6 @@ end
 function FlipPlayerEnd()
     if not flipPlayerActive then return end
     flipPlayerActive = false
-    PrintToConsole("FlipPlayerEnd")
     ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(false) end)
     UnregisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", flipPlayerRoomChangePreHook, flipPlayerRoomChangePostHook)
 end
@@ -262,7 +259,6 @@ end
 function ShuffleControlsEnd()
     if not shuffleControlsActive then return end
     shuffleControlsActive = false
-    PrintToConsole("ShuffleControlsEnd")
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(0, shuffleControlsOriginalAttack)
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(1, shuffleControlsOriginalBackstep)
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(2, shuffleControlsOriginalJump)
@@ -293,7 +289,6 @@ end
 function UseWitchTimeEnd()
     if not useWitchTimeActive then return end
     useWitchTimeActive = false
-    PrintToConsole("UseWitchTimeEnd")
     local player = GetPlayerCharacter()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
@@ -317,7 +312,6 @@ end
 function TurboEnemiesEnd()
     if not turboEnemiesActive then return end
     turboEnemiesActive = false
-    PrintToConsole("UseWitchTimeEnd")
     local player = GetPlayerCharacter()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
@@ -335,7 +329,6 @@ end
 function UncontrollableSpeedEnd()
     if not uncontrollableSpeedActive then return end
     uncontrollableSpeedActive = false
-    PrintToConsole("UncontrollableSpeedEnd")
     RestoreEquipSpecialAttribute({15, 16, 22})
 end
 
@@ -353,7 +346,6 @@ end
 function CriticalModeEnd()
     if not criticalModeActive then return end
     criticalModeActive = false
-    PrintToConsole("CriticalModeEnd")
     RestoreEquipSpecialAttribute({8})
     local player = GetPlayerCharacter()
     if player:IsValid() then
@@ -391,7 +383,6 @@ end
 function GoldRushEnd()
     if not goldRushActive then return end
     goldRushActive = false
-    PrintToConsole("GoldRushEnd")
     GetGameInstance():SetTotalCoin(goldRushMoneyGain)
     if goldRushDamagePopup:IsValid() then goldRushDamagePopup:RemoveFromViewport() end
     if GetPlayerCharacter():IsValid() then PlayEnemySound(goldRushMoneyGain > 0 and "SE_N1004_Coin02" or "Vo_N1004_040_jp") end
@@ -471,7 +462,7 @@ function SummonAmbush()
     NotifyCrowdControlCommand("Summon Ambush")
     local chosenEnemy = RandomChoice(enemylist)
     local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
-    PrintToConsole("Spawned enemy: " .. chosenEnemy)
+    print("Spawned enemy: " .. chosenEnemy)
     -- Spawn 2 of the same random enemy with their levels scaling with map completion
     ExecuteInGameThread(function()
         local enemy1 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
@@ -521,7 +512,6 @@ function SummonRaveEnd()
     if not summonRaveActive then return end
     summonRaveActive = false
     summonRaveShouldStopEffect = true
-    PrintToConsole("SummonRaveEnd")
     local postProcess = FindFirstOf("PostProcessVolume")
     if postProcess:IsValid() then
         postProcess.Settings.bOverride_ColorGain = 0
@@ -544,7 +534,6 @@ end
 function SummonDarknessEnd()
     if not summonDarknessActive then return end
     summonDarknessActive = false
-    PrintToConsole("SummonDarknessEnd")
     local postProcess = FindFirstOf("PostProcessVolume")
     if postProcess:IsValid() then
         postProcess.Settings.bOverride_VignetteIntensity = 0
@@ -579,7 +568,6 @@ end
 function ForceInvertEnd()
     if not forceInvertActive then return end
     forceInvertActive = false
-    PrintToConsole("ForceInvertEnd")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     if player:IsValid() then
@@ -606,7 +594,6 @@ end
 function NoSkillShardsEnd()
     if not noSkillShardsActive then return end
     noSkillShardsActive = false
-    PrintToConsole("NoSkillShardsEnd")
     if GetPlayerCharacter():IsValid() then
         ExecuteInGameThread(function() SetAllSkillOnOff(true) end)
     end
@@ -658,7 +645,6 @@ end
 function WeaponsOnlyEnd()
     if not weaponsOnlyActive then return end
     weaponsOnlyActive = false
-    PrintToConsole("WeaponsOnlyEnd")
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
@@ -704,7 +690,6 @@ end
 function ShardsOnlyEnd()
     if not shardsOnlyActive then return end
     shardsOnlyActive = false
-    PrintToConsole("ShardsOnlyEnd")
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
@@ -739,13 +724,13 @@ function ForceEquipment()
     local currentDirectionalShard = RandomEquipment(inventory.myDirectionalShards)
     local currentEnchantShard = RandomEquipment(inventory.myEnchantShards)
     local currentFamiliarShard = RandomEquipment(inventory.myFamiliarShards)
-    PrintToConsole("Forced weapon: " .. currentWeapon:ToString())
-    PrintToConsole("Forced bullet: " .. currentBullet:ToString())
-    PrintToConsole("Forced trigger shard: " .. currentTriggerShard:ToString())
-    PrintToConsole("Forced effective shard: " .. currentEffectiveShard:ToString())
-    PrintToConsole("Forced directional shard: " .. currentDirectionalShard:ToString())
-    PrintToConsole("Forced enchant shard: " .. currentEnchantShard:ToString())
-    PrintToConsole("Forced familiar shard: " .. currentFamiliarShard:ToString())
+    print("Forced weapon: " .. currentWeapon:ToString())
+    print("Forced bullet: " .. currentBullet:ToString())
+    print("Forced trigger shard: " .. currentTriggerShard:ToString())
+    print("Forced effective shard: " .. currentEffectiveShard:ToString())
+    print("Forced directional shard: " .. currentDirectionalShard:ToString())
+    print("Forced enchant shard: " .. currentEnchantShard:ToString())
+    print("Forced familiar shard: " .. currentFamiliarShard:ToString())
     ExecuteInGameThread(function()
         interfaceHUD:DispShortcutMenu(true)
         EquipPlayerWeapon(currentWeapon, currentBullet)
@@ -772,7 +757,6 @@ end
 function ForceEquipmentEnd()
     if not forceEquipmentActive then return end
     forceEquipmentActive = false
-    PrintToConsole("ForceEquipmentEnd")
     local interfaceHUD = FindFirstOf("PBInterfaceHUD")
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
@@ -847,7 +831,6 @@ end
 function HeavenOrHellEnd()
     if not heavenOrHellActive then return end
     heavenOrHellActive = false
-    PrintToConsole("HeavenOrHellEnd")
     RestoreEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69})
     UnregisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook)
 end
@@ -1125,12 +1108,6 @@ RegisterKeyBind(Key.F1, function()
     ToggleDisplayNotifications()
 end)
 
-function isReady()
-    return CanExecuteCommand()
-end
-
-timed = {}
-
 LoopAsync(10000, function()
     checkConn()
     return false
@@ -1139,21 +1116,27 @@ end)
 LoopAsync(50, function()
     if not connected() then return false end
     
-    id, code, dur = getEffect()
+    id, code, duration = getEffect()
     
     if code == "" then
         return false
     end
     
-    local status, ready = pcall(isReady)
+    local success, result = pcall(CanExecuteCommand)
     
-    if not status or not ready then
+    if not success then
+        print(result)
+        ccRespond(id, 1)
+        return false
+    end
+    
+    if not result then
         ccRespond(id, 3)
         return false
     end
     
-    if dur > 0 then
-        local rec = timed[code]
+    if duration > 0 then
+        local rec = timedEffects[code]
         if rec ~= nil then 
             ccRespond(id, 3)
             return false
@@ -1163,31 +1146,24 @@ LoopAsync(50, function()
     print(code)
     local func =_G[code]
     
-    if pcall(function()
-        if func ~= nil then
-            local res = nil
-            if code == "TriggerEarthquake" then
-                res = func(dur)
-            else
-                res = func()
-            end
-            if res then
-                if dur > 0 then
-                    ccRespondTimed(id, 0, dur)
-                    local entry = {}
-                    entry["id"] = id
-                    entry["dur"] = dur
-                    entry["code"] = code
-                    timed[code] = entry
-                else
-                    ccRespond(id, 0)
-                end
-            else
-                ccRespond(id, 3)
-            end
+    if IsInList(internalTimers, code) then
+        success, result = pcall(func, duration)
+    else
+        success, result = pcall(func)
+    end
+    
+    if not success then
+        print(result)
+        ccRespond(id, 1)
+        return false
+    end
+    if result then
+        if duration > 0 then
+            ccRespondTimed(id, 0, duration)
+            timedEffects[code] = {"id" = id, "code" = code, "duration" = duration}
+        else
+            ccRespond(id, 0)
         end
-    end) then
-        
     else
         ccRespond(id, 3)
     end
@@ -1195,18 +1171,28 @@ LoopAsync(50, function()
 end)
 
 LoopAsync(250, function()
-    for code, entry in pairs(timed) do
-        entry["dur"] = entry["dur"] - 250
-        if entry["dur"] <= 0 then
-            local code = entry["code"] .. "End"
+    for code, entry in pairs(timedEffects) do
+        entry["duration"] = entry["duration"] - 250
+        if entry["duration"] <= 0 then
+            local endCode = entry["code"] .. "End"
+            local func =_G[endCode]
             
-            local func =_G[code]
+            local success, result = pcall(func)
             
-            if func == nil or pcall(func) then
-                ccRespondTimed(entry["id"], 8, 0)
-                timed[entry["code"]] = nil
+            if func == nil or success and result then
+                EndTimedEffect(code)
+            end
+            if not success then
+                print(result)
             end
         end
     end
     return false
 end)
+
+function EndTimedEffect(effectName)
+    local entry = timedEffects[effectName]
+    ccRespondTimed(entry["id"], 8, 0)
+    timedEffects[effectName] = nil
+    print(entry["code"] .. "End")
+end
