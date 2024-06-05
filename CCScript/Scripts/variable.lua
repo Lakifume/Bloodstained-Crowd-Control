@@ -2,7 +2,8 @@ timedEffects = {}
 
 displayNotifications = true
 
-sizeChangeActive = false
+shrinkPlayerActive = false
+growPlayerActive = false
 flipPlayerActive = false
 shuffleControlsActive = false
 useWitchTimeActive = false

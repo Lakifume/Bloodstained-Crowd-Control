@@ -1,7 +1,3 @@
-internalTimers = {
-    "TriggerEarthquake"
-}
-
 rotatingRooms = {
     "m02VIL_008",
     "m02VIL_011",

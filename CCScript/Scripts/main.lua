@@ -137,8 +137,9 @@ function PlayDeathQuote()
 end
 
 function ShrinkPlayer()
-    if sizeChangeActive then return false end
-    sizeChangeActive = true
+    if shrinkPlayerActive then return false end
+    if growPlayerActive then return false end
+    shrinkPlayerActive = true
     sizeChangeCurrentModifier = 0.5
     NotifyCrowdControlCommand("Shrink Player")
     SetPlayerScale(false)
@@ -146,14 +147,16 @@ function ShrinkPlayer()
 end
 
 function ShrinkPlayerEnd()
-    if not sizeChangeActive then return end
-    sizeChangeActive = false
+    if not shrinkPlayerActive then return end
+    shrinkPlayerActive = false
     if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
+    EndTimedEffect("ShrinkPlayer")
 end
 
 function GrowPlayer()
-    if sizeChangeActive then return false end
-    sizeChangeActive = true
+    if growPlayerActive then return false end
+    if shrinkPlayerActive then return false end
+    growPlayerActive = true
     sizeChangeCurrentModifier = 1.5
     NotifyCrowdControlCommand("Grow Player")
     SetPlayerScale(false)
@@ -161,9 +164,10 @@ function GrowPlayer()
 end
 
 function GrowPlayerEnd()
-    if not sizeChangeActive then return end
-    sizeChangeActive = false
+    if not growPlayerActive then return end
+    growPlayerActive = false
     if GetPlayerCharacter():IsValid() then SetPlayerScale(true) end
+    EndTimedEffect("GrowPlayer")
 end
 
 function SetPlayerScale(resetScale)
@@ -205,6 +209,7 @@ function FlipPlayerEnd()
     flipPlayerActive = false
     ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(false) end)
     UnregisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", flipPlayerRoomChangePreHook, flipPlayerRoomChangePostHook)
+    EndTimedEffect("FlipPlayer")
 end
 
 function ShuffleControls()
@@ -267,6 +272,7 @@ function ShuffleControlsEnd()
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(5, shuffleControlsOriginalEffective)
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(7, shuffleControlsOriginalShortcut)
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", shuffleControlsUnpausePreHook, shuffleControlsUnpausePostHook)
+    EndTimedEffect("ShuffleControls")
 end
 
 function UseWitchTime()
@@ -293,6 +299,7 @@ function UseWitchTimeEnd()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
     end
+    EndTimedEffect("UseWitchTime")
 end
 
 function TurboEnemies()
@@ -316,6 +323,7 @@ function TurboEnemiesEnd()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
     end
+    EndTimedEffect("TurboEnemies")
 end
 
 function UncontrollableSpeed()
@@ -330,6 +338,7 @@ function UncontrollableSpeedEnd()
     if not uncontrollableSpeedActive then return end
     uncontrollableSpeedActive = false
     RestoreEquipSpecialAttribute({15, 16, 22})
+    EndTimedEffect("UncontrollableSpeed")
 end
 
 function CriticalMode()
@@ -352,6 +361,7 @@ function CriticalModeEnd()
         player:SetEquipSpecialAttribute(107, 0.0)
         player:SetEquipSpecialAttribute(108, 0.0)
     end
+    EndTimedEffect("CriticalMode")
 end
 
 function GoldRush()
@@ -369,7 +379,7 @@ function GoldRush()
     goldRushDamagePopupPreHook, goldRushDamagePopupPostHook = RegisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", function(self, param1, param2)
         local damage = param1:get()
         local color = param2:get()
-        if color.R == 1.0 and color.G== 1.0 and color.B == 1.0 then
+        if color.R == 1.0 and color.G == 1.0 and color.B == 1.0 then
             local coinModifier = math.max(0.1, GetGameInstance().totalCoins/6666)
             local compModifier = Lerp(0.1, 1, GetGameInstance().pMapManager:GetRoomTraverseRate({})/100)
             local quantity = math.max(1, math.floor(damage*(coinModifier/compModifier)))
@@ -387,6 +397,7 @@ function GoldRushEnd()
     if goldRushDamagePopup:IsValid() then goldRushDamagePopup:RemoveFromViewport() end
     if GetPlayerCharacter():IsValid() then PlayEnemySound(goldRushMoneyGain > 0 and "SE_N1004_Coin02" or "Vo_N1004_040_jp") end
     UnregisterHook("/Game/Core/UI/HUD/Damage/DamagePopup.DamagePopup_C:CustomDamageEvent", goldRushDamagePopupPreHook, goldRushDamagePopupPostHook)
+    EndTimedEffect("GoldRush")
 end
 
 function UseWaystone()
@@ -496,16 +507,20 @@ function SummonRave()
     postProcess.Settings.bOverride_ColorGain = 1
     -- Cycle through color gains
     LoopAsync(math.floor(deltaSeconds*1000), function()
-        if summonRaveShouldStopEffect or not postProcess:IsValid() then return true end
+        if summonRaveShouldStopEffect then return true end
         ExecuteInGameThread(function()
             timer = timer + deltaSeconds*1000
             progress = timer%fullcycle
             color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
-            postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B}
+            if postProcess:IsValid() then postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B} end
         end)
         return false
     end)
     return true
+end
+
+function CanSummonRaveEnd()
+    return FindFirstOf("PostProcessVolume"):IsValid()
 end
 
 function SummonRaveEnd()
@@ -517,6 +532,7 @@ function SummonRaveEnd()
         postProcess.Settings.bOverride_ColorGain = 0
         postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0}
     end
+    EndTimedEffect("SummonRave")
 end
 
 function SummonDarkness()
@@ -531,6 +547,10 @@ function SummonDarkness()
     return true
 end
 
+function CanSummonDarknessEnd()
+    return FindFirstOf("PostProcessVolume"):IsValid()
+end
+
 function SummonDarknessEnd()
     if not summonDarknessActive then return end
     summonDarknessActive = false
@@ -539,6 +559,7 @@ function SummonDarknessEnd()
         postProcess.Settings.bOverride_VignetteIntensity = 0
         postProcess.Settings.VignetteIntensity = 0.0
     end
+    EndTimedEffect("SummonDarkness")
 end
 
 function TriggerEarthquake(duration)
@@ -550,6 +571,7 @@ end
 
 function ForceInvert()
     if forceInvertActive then return false end
+    if noSkillShardsActive then return false end
     forceInvertActive = true
     NotifyCrowdControlCommand("Force Invert")
     local player = GetPlayerCharacter()
@@ -577,13 +599,18 @@ function ForceInvertEnd()
         end)
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", forceInvertUnpausePreHook, forceInvertUnpausePostHook)
+    EndTimedEffect("ForceInvert")
 end
 
 function NoSkillShards()
     if noSkillShardsActive then return false end
+    if forceInvertActive then return false end
     noSkillShardsActive = true
     NotifyCrowdControlCommand("No Skill Shards")
-    ExecuteInGameThread(function() SetAllSkillOnOff(false) end)
+    ExecuteInGameThread(function()
+        if eventUtility:IsInvertedByPlayerCharacter(0) then GetPlayerCharacter().Step:BeginInvert() end
+        SetAllSkillOnOff(false)
+    end)
     -- Prevent the player from enabling them back
     noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook = RegisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", function()
         ExecuteInGameThread(function() SetAllSkillOnOff(false) end)
@@ -598,6 +625,7 @@ function NoSkillShardsEnd()
         ExecuteInGameThread(function() SetAllSkillOnOff(true) end)
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", noSkillShardsUnpausePreHook, noSkillShardsUnpausePostHook)
+    EndTimedEffect("NoSkillShards")
 end
 
 function SetAllSkillOnOff(flag)
@@ -654,6 +682,7 @@ function WeaponsOnlyEnd()
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", equipmentChangeUnpausePreHook, equipmentChangeUnpausePostHook)
     UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", equipmentChangeShortcutPreHook, equipmentChangeShortcutPostHook)
+    EndTimedEffect("WeaponsOnly")
 end
 
 function ShardsOnly()
@@ -699,6 +728,7 @@ function ShardsOnlyEnd()
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", equipmentChangeUnpausePreHook, equipmentChangeUnpausePostHook)
     UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", equipmentChangeShortcutPreHook, equipmentChangeShortcutPostHook)
+    EndTimedEffect("ShardsOnly")
 end
 
 function ForceEquipment()
@@ -767,6 +797,7 @@ function ForceEquipmentEnd()
     end
     UnregisterHook("/Script/ProjectBlood.PBInterfaceHUD:CallMenuEndPause", equipmentChangeUnpausePreHook, equipmentChangeUnpausePostHook)
     UnregisterHook("/Script/ProjectBlood.PBCharacterInventoryComponent:ChangeCurrentShortcut", equipmentChangeShortcutPreHook, equipmentChangeShortcutPostHook)
+    EndTimedEffect("ForceEquipment")
 end
 
 function EquipPlayerWeapon(weaponID, bulletID)
@@ -833,6 +864,7 @@ function HeavenOrHellEnd()
     heavenOrHellActive = false
     RestoreEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69})
     UnregisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook)
+    EndTimedEffect("HeavenOrHell")
 end
 
 function ReturnBooks()
@@ -1043,9 +1075,9 @@ end
 
 -- Update the Bunnymorphosis body scale if necessary
 NotifyOnNewObject("/Script/ProjectBlood.PBBulletSubActorBase", function(ConstructedObject)
-	if GetClassName(ConstructedObject) == "EffectiveChangeBunny_C" and sizeChangeActive then
-		ConstructedObject.SK_ChangeBunny_Body:SetRelativeScale3D({X=sizeChangeCurrentModifier, Y=sizeChangeCurrentModifier, Z=sizeChangeCurrentModifier})
-	end
+    if GetClassName(ConstructedObject) == "EffectiveChangeBunny_C" and sizeChangeActive then
+        ConstructedObject.SK_ChangeBunny_Body:SetRelativeScale3D({X=sizeChangeCurrentModifier, Y=sizeChangeCurrentModifier, Z=sizeChangeCurrentModifier})
+    end
 end)
 
 -- End all effects
@@ -1108,19 +1140,19 @@ RegisterKeyBind(Key.F1, function()
     ToggleDisplayNotifications()
 end)
 
+-- Try to connect to CC periodically
 LoopAsync(10000, function()
     checkConn()
     return false
 end)
 
+-- Check effects used
 LoopAsync(50, function()
     if not connected() then return false end
     
     id, code, duration = getEffect()
     
-    if code == "" then
-        return false
-    end
+    if code == "" then return false end
     
     local success, result = pcall(CanExecuteCommand)
     
@@ -1135,18 +1167,15 @@ LoopAsync(50, function()
         return false
     end
     
-    if duration > 0 then
-        local rec = timedEffects[code]
-        if rec ~= nil then 
-            ccRespond(id, 3)
-            return false
-        end
+    if timedEffects[code] ~= nil then
+        ccRespond(id, 3)
+        return false
     end
     
     print(code)
-    local func =_G[code]
+    local func = _G[code]
     
-    if IsInList(internalTimers, code) then
+    if duration > 0 and _G[code .. "End"] == nil then
         success, result = pcall(func, duration)
     else
         success, result = pcall(func)
@@ -1157,33 +1186,59 @@ LoopAsync(50, function()
         ccRespond(id, 1)
         return false
     end
-    if result then
-        if duration > 0 then
-            ccRespondTimed(id, 0, duration)
-            timedEffects[code] = {"id" = id, "code" = code, "duration" = duration}
-        else
-            ccRespond(id, 0)
-        end
-    else
+    
+    if not result then
         ccRespond(id, 3)
+        return false
     end
+    
+    if duration > 0 then
+        ccRespondTimed(id, 0, duration)
+        timedEffects[code] = {"id" = id, "code" = code, "duration" = duration}
+    else
+        ccRespond(id, 0)
+    end
+    
     return false
 end)
 
+-- Check timed effect status
 LoopAsync(250, function()
+    -- Check if commands can be used
+    if next(timedEffects) ~= nil then
+        local success, result = pcall(CanExecuteCommand)
+        
+        if not success then
+            print(result)
+            return false
+        end
+        
+        if not result then return false end
+    end
+    -- Loop through active timed effects
     for code, entry in pairs(timedEffects) do
         entry["duration"] = entry["duration"] - 250
         if entry["duration"] <= 0 then
-            local endCode = entry["code"] .. "End"
-            local func =_G[endCode]
+            -- Look if there is an extra function to check
+            local checkCode = "Can" .. entry["code"] .. "End"
+            local checkFunc = _G[checkCode]
             
-            local success, result = pcall(func)
-            
-            if func == nil or success and result then
-                EndTimedEffect(code)
+            if checkFunc ~= nil then
+                result = checkFunc()
+            else
+                result = true
             end
-            if not success then
-                print(result)
+            -- Execute end function if it exists
+            if result then
+                local endCode = entry["code"] .. "End"
+                local endFunc = _G[endCode]
+                
+                if endFunc ~= nil then
+                    success, result = pcall(endFunc)
+                    if not success then print(result) end
+                else
+                    EndTimedEffect(code)
+                end
             end
         end
     end
@@ -1192,7 +1247,9 @@ end)
 
 function EndTimedEffect(effectName)
     local entry = timedEffects[effectName]
-    ccRespondTimed(entry["id"], 8, 0)
-    timedEffects[effectName] = nil
-    print(entry["code"] .. "End")
+    if entry ~= nil then
+        ccRespondTimed(entry["id"], 8, 0)
+        timedEffects[effectName] = nil
+        print(entry["code"] .. "End")
+    end
 end
