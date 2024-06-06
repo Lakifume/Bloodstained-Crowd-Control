@@ -9,7 +9,9 @@ function CanExecuteCommand()
     if not player:IsValid() then return false end
     if not IsCharacterAlive(player) then return false end 
     if not interfaceHUD:IsValid() then return false end
+    if not interfaceHUD:GetGaugeWidget():IsValid() then return false end
     if not interfaceHUD:GetGaugeWidget():GetIsVisible() then return false end
+    if not GetGameInstance().LoadingManagerInstance:IsValid() then return false end
     if GetGameInstance().LoadingManagerInstance:IsLoadingScreenVisible() then return false end
     return true
 end
@@ -640,6 +642,7 @@ function WeaponsOnly()
     if weaponsOnlyActive then return false end
     if shardsOnlyActive then return false end
     if forceEquipmentActive then return false end
+    if IsShardWindowOpen() then return false end
     weaponsOnlyActive = true
     NotifyCrowdControlCommand("Weapons Only")
     local player = GetPlayerCharacter()
@@ -670,6 +673,10 @@ function WeaponsOnly()
     return true
 end
 
+function CanWeaponsOnlyEnd()
+    return not IsShardWindowOpen()
+end
+
 function WeaponsOnlyEnd()
     if not weaponsOnlyActive then return end
     weaponsOnlyActive = false
@@ -689,6 +696,7 @@ function ShardsOnly()
     if shardsOnlyActive then return false end
     if weaponsOnlyActive then return false end
     if forceEquipmentActive then return false end
+    if IsShardWindowOpen() then return false end
     shardsOnlyActive = true
     NotifyCrowdControlCommand("Shards Only")
     local player = GetPlayerCharacter()
@@ -716,6 +724,10 @@ function ShardsOnly()
     return true
 end
 
+function CanShardsOnlyEnd()
+    return not IsShardWindowOpen()
+end
+
 function ShardsOnlyEnd()
     if not shardsOnlyActive then return end
     shardsOnlyActive = false
@@ -735,6 +747,7 @@ function ForceEquipment()
     if forceEquipmentActive then return false end
     if weaponsOnlyActive then return false end
     if shardsOnlyActive then return false end
+    if IsShardWindowOpen() then return false end
     forceEquipmentActive = true
     NotifyCrowdControlCommand("Force Equipment")
     local player = GetPlayerCharacter()
@@ -782,6 +795,10 @@ function ForceEquipment()
         end)
     end)
     return true
+end
+
+function CanForceEquipmentEnd()
+    return not IsShardWindowOpen()
 end
 
 function ForceEquipmentEnd()
@@ -842,6 +859,14 @@ function RandomEquipment(equipmentList)
         return RandomChoice(validEquipment)
     end
     return nullName
+end
+
+function IsShardWindowOpen()
+    local shardWindow = FindFirstOf("TutorialShardWindow_C")
+    if shardWindow:IsValid() then
+        return shardWindow:GetIsVisible()
+    end
+    return false
 end
 
 function HeavenOrHell()
@@ -1172,7 +1197,6 @@ LoopAsync(50, function()
         return false
     end
     
-    print(code)
     local func = _G[code]
     
     if duration > 0 and _G[code .. "End"] == nil then
@@ -1194,54 +1218,66 @@ LoopAsync(50, function()
     
     if duration > 0 then
         ccRespondTimed(id, 0, duration)
-        timedEffects[code] = {"id" = id, "code" = code, "duration" = duration}
+        timedEffects[code] = {["id"] = id, ["code"] = code, ["duration"] = duration}
     else
         ccRespond(id, 0)
     end
     
+    print(code)
     return false
 end)
 
 -- Check timed effect status
 LoopAsync(250, function()
+    if next(timedEffects) == nil then return false end
     -- Check if commands can be used
-    if next(timedEffects) ~= nil then
-        local success, result = pcall(CanExecuteCommand)
-        
-        if not success then
-            print(result)
-            return false
-        end
-        
-        if not result then return false end
+    local success, result = pcall(CanExecuteCommand)
+    
+    if not success then
+        print(result)
+        return false
     end
+    
+    local canExecute = result
     -- Loop through active timed effects
     for code, entry in pairs(timedEffects) do
-        entry["duration"] = entry["duration"] - 250
-        if entry["duration"] <= 0 then
-            -- Look if there is an extra function to check
-            local checkCode = "Can" .. entry["code"] .. "End"
-            local checkFunc = _G[checkCode]
+        if canExecute then
+            if timedEffectsWerePaused then ccRespondTimed(entry["id"], 7, entry["duration"]) end
             
-            if checkFunc ~= nil then
-                result = checkFunc()
-            else
-                result = true
-            end
-            -- Execute end function if it exists
-            if result then
-                local endCode = entry["code"] .. "End"
-                local endFunc = _G[endCode]
+            entry["duration"] = entry["duration"] - 250
+            if entry["duration"] <= 0 then
+                -- Look if there is an extra function to check
+                local checkCode = "Can" .. entry["code"] .. "End"
+                local checkFunc = _G[checkCode]
                 
-                if endFunc ~= nil then
-                    success, result = pcall(endFunc)
-                    if not success then print(result) end
+                if checkFunc ~= nil then
+                    local success, result = pcall(checkFunc)
                 else
-                    EndTimedEffect(code)
+                    local success, result = true
+                end
+                -- Execute end function if it exists
+                if success then
+                    if result then
+                        local endCode = entry["code"] .. "End"
+                        local endFunc = _G[endCode]
+                        
+                        if endFunc ~= nil then
+                            local success, result = pcall(endFunc)
+                            if not success then print(result) end
+                        else
+                            EndTimedEffect(code)
+                        end
+                    end
+                else
+                    print(result)
                 end
             end
+        else
+            if not timedEffectsWerePaused then ccRespondTimed(entry["id"], 6, entry["duration"]) end
         end
     end
+    
+    timedEffectsWerePaused = not canExecute
     return false
 end)
 

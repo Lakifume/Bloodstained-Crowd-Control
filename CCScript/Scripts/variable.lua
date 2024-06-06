@@ -1,4 +1,5 @@
 timedEffects = {}
+timedEffectsWerePaused = false
 
 displayNotifications = true
 
