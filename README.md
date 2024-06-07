@@ -31,14 +31,14 @@ For best results it is recommended to combine this with True Randomization: http
 | Use Rosario          | Kill every enemy on the current screen. If it's a boss it will only inflict damage                                | 16    | ---      | -        |
 | Rewind Time          | Warp the player 2 rooms backwards. Does not work during boss fights                                               | 16    | ---      | -        |
 | Summon Ambush        | Ambush the player by surrounding them with a random enemy                                                         | 8     | ---      | -        |
-| Summon Rave          | It's party time at the demon castle !                                                                             | 8     | 25s      | 2        |
+| Summon Rave          | It's party time at the demon castle !                                                                             | 8     | 30s      | 2        |
 | Summon Darkness      | Follow the light at the end of the tunnel                                                                         | 8     | 20s      | 2        |
-| Trigger Earthquake   | Bloodstained go brrr                                                                                              | 8     | 15s      | -        |
-| Force Invert         | Force the player to remain in second castle                                                                       | 8     | 20s      | -        |
-| No Skill Shards      | Turn off all white shards. Epic gamers can use their own skillz                                                   | 8     | 30s      | -        |
-| Weapons Only         | Unequip the player's current shards, forcing them to use weapons instead                                          | 8     | 60s      | 3        |
-| Shards Only          | Unequip the player's current weapon, forcing them to use shards instead                                           | 8     | 30s      | 3        |
-| Force Equipment      | Force a random set of equipment based on what the player has in their inventory                                   | 8     | 60s      | 3        |
+| Trigger Earthquake   | Bloodstained go brrr                                                                                              | 8     | 20s      | -        |
+| Force Invert         | Force the player to remain in second castle                                                                       | 8     | 20s      | 3        |
+| No Skill Shards      | Turn off all white shards. Epic gamers can use their own skillz                                                   | 8     | 30s      | 3        |
+| Weapons Only         | Unequip the player's current shards, forcing them to use weapons instead                                          | 8     | 60s      | 4        |
+| Shards Only          | Unequip the player's current weapon, forcing them to use shards instead                                           | 8     | 30s      | 4        |
+| Force Equipment      | Force a random set of equipment based on what the player has in their inventory                                   | 8     | 60s      | 4        |
 | Heaven or Hell       | May make the player invincible… or may put them in one-hit KO mode                                                | 24    | 60s      | -        |
 | Return Books         | This is a library, not a bookshop                                                                                 | 40    | ---      | -        |
 | Call The Library     | Report Miriam to Orlok Dracule so that he can meet with her soon to talk about the tomes she did not return       | 80    | ---      | -        |
