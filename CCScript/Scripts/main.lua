@@ -456,13 +456,21 @@ function RewindTime()
     if GetGameInstance():IsBossBattleNow() then return false end
     -- Warp in the last valid room traversed, 2 rooms back at most
     local chosenRoom
-    if     previousRoom2 ~= nullName and not IsInList(rotatingRooms, previousRoom2:ToString()) then
+    if     IsValidRewindRoom(previousRoom2) then
         chosenRoom = previousRoom2
-    elseif previousRoom1 ~= nullName and not IsInList(rotatingRooms, previousRoom1:ToString()) then
+    elseif IsValidRewindRoom(previousRoom1) then
         chosenRoom = previousRoom1
     else return false end
     NotifyCrowdControlCommand("Rewind Time")
     ExecuteInGameThread(function() GetGameInstance().pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
+    return true
+end
+
+function IsValidRewindRoom(room)
+    if room == nullName or IsInList(rotatingRooms, room:ToString()) then return false end
+    if orlokStandbyActive then
+        return not IsInArray(GetGameInstance().pMapManager:GetRoomsByType(1), room)
+    end
     return true
 end
 
@@ -1175,7 +1183,7 @@ end)
 LoopAsync(50, function()
     if not connected() then return false end
     
-    id, code, duration = getEffect()
+    local id, code, duration = getEffect()
     
     if code == "" then return false end
     
@@ -1251,9 +1259,9 @@ LoopAsync(250, function()
                 local checkFunc = _G[checkCode]
                 
                 if checkFunc ~= nil then
-                    local success, result = pcall(checkFunc)
+                    success, result = pcall(checkFunc)
                 else
-                    local success, result = true
+                    success, result = true
                 end
                 -- Execute end function if it exists
                 if success then
@@ -1262,7 +1270,7 @@ LoopAsync(250, function()
                         local endFunc = _G[endCode]
                         
                         if endFunc ~= nil then
-                            local success, result = pcall(endFunc)
+                            success, result = pcall(endFunc)
                             if not success then print(result) end
                         else
                             EndTimedEffect(code)

@@ -129,6 +129,13 @@ function IsInList(list, item)
     return false
 end
 
+function IsInArray(array, item)
+    for index = 1,#array,1 do
+        if array[index]:get() == item then return true end
+    end
+    return false
+end
+
 function ItemInInventory(list, item)
     for index = 1,#list,1 do
         if list[index].ID:ToString() == item and list[index].Num > 0 then return true end
