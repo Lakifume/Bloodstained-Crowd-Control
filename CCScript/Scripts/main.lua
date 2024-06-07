@@ -3,22 +3,22 @@ require("constant")
 require("variable")
 
 function CanExecuteCommand()
-    local player = GetPlayerCharacter()
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
     if not IsInList({1, 6, 9}, GetGameInstance():GetGameModeType()) then return false end
+    if not GetGameInstance().LoadingManagerInstance:IsValid() then return false end
+    if GetGameInstance().LoadingManagerInstance:IsLoadingScreenVisible() then return false end
+    local player = GetPlayerCharacter()
     if not player:IsValid() then return false end
-    if not IsCharacterAlive(player) then return false end 
+    if player.Killed then return false end 
+    local interfaceHUD = GetPlayerController().MyHUD
     if not interfaceHUD:IsValid() then return false end
     if not interfaceHUD:GetGaugeWidget():IsValid() then return false end
     if not interfaceHUD:GetGaugeWidget():GetIsVisible() then return false end
-    if not GetGameInstance().LoadingManagerInstance:IsValid() then return false end
-    if GetGameInstance().LoadingManagerInstance:IsLoadingScreenVisible() then return false end
     return true
 end
 
 function NotifyCrowdControlCommand(effectName)
     if not displayNotifications then return end
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     interfaceHUD:DisplayItemNameWindow(effectName, 1022)
 end
 
@@ -281,15 +281,20 @@ function UseWitchTime()
     if useWitchTimeActive then return false end
     if turboEnemiesActive then return false end
     useWitchTimeActive = true
+    useWitchTimeShouldStopEffect = false
     NotifyCrowdControlCommand("Use Witch Time")
     local player = GetPlayerCharacter()
     local rate = 0.25
-    ExecuteInGameThread(function()
-        utility:PBCategorySlomo(1, 0, rate, player)
-        utility:PBCategorySlomo(2, 0, rate, player)
-        utility:PBCategorySlomo(3, 0, rate, player)
-        utility:PBCategorySlomo(4, 0, rate, player)
-        utility:PBActorSlomo(player, 0, 1.0)
+    LoopAsync(1000, function()
+        if useWitchTimeShouldStopEffect then return true end
+        ExecuteInGameThread(function()
+            utility:PBCategorySlomo(1, 0, rate, player)
+            utility:PBCategorySlomo(2, 0, rate, player)
+            utility:PBCategorySlomo(3, 0, rate, player)
+            utility:PBCategorySlomo(4, 0, rate, player)
+            utility:PBActorSlomo(player, 0, 1.0)
+        end)
+        return false
     end)
     return true
 end
@@ -297,6 +302,7 @@ end
 function UseWitchTimeEnd()
     if not useWitchTimeActive then return end
     useWitchTimeActive = false
+    useWitchTimeShouldStopEffect = true
     local player = GetPlayerCharacter()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
@@ -308,12 +314,17 @@ function TurboEnemies()
     if turboEnemiesActive then return false end
     if useWitchTimeActive then return false end
     turboEnemiesActive = true
+    turboEnemiesShouldStopEffect = false
     NotifyCrowdControlCommand("Turbo Enemies")
-    local rate = 2.0
     local player = GetPlayerCharacter()
-    ExecuteInGameThread(function()
-        utility:PBCategorySlomo(1, 0, rate, player)
-        utility:PBActorSlomo(player, 0, 1.0)
+    local rate = 2.0
+    LoopAsync(1000, function()
+        if turboEnemiesShouldStopEffect then return true end
+        ExecuteInGameThread(function()
+            utility:PBCategorySlomo(1, 0, rate, player)
+            utility:PBActorSlomo(player, 0, 1.0)
+        end)
+        return false
     end)
     return true
 end
@@ -321,6 +332,7 @@ end
 function TurboEnemiesEnd()
     if not turboEnemiesActive then return end
     turboEnemiesActive = false
+    turboEnemiesShouldStopEffect = true
     local player = GetPlayerCharacter()
     if player:IsValid() then
         ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
@@ -418,7 +430,7 @@ function UseRosario()
     for index = 1,#actorInstances,1 do
         local actor = actorInstances[index]
         if actor:IsValid() then
-            if actor.OnTheScreen and IsCharacterAlive(actor) then
+            if actor.OnTheScreen and not actor.Killed then
                 if actor:IsBoss() then table.insert(enemiesToDamage, actor) elseif actor:IsEnemy() then table.insert(enemiesToKill, actor) end
             end
         end
@@ -655,7 +667,7 @@ function WeaponsOnly()
     NotifyCrowdControlCommand("Weapons Only")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalTrigger = inventory.aEquipShortcuts.TriggerShard
     equipmentChangeOriginalEffective = inventory.aEquipShortcuts.EffectiveShard
     equipmentChangeOriginalDirectional = inventory.aEquipShortcuts.DirectionalShard
@@ -688,7 +700,7 @@ end
 function WeaponsOnlyEnd()
     if not weaponsOnlyActive then return end
     weaponsOnlyActive = false
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
             interfaceHUD:DispShortcutMenu(true)
@@ -709,7 +721,7 @@ function ShardsOnly()
     NotifyCrowdControlCommand("Shards Only")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
     equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
     ExecuteInGameThread(function()
@@ -739,7 +751,7 @@ end
 function ShardsOnlyEnd()
     if not shardsOnlyActive then return end
     shardsOnlyActive = false
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
             interfaceHUD:DispShortcutMenu(true)
@@ -760,7 +772,7 @@ function ForceEquipment()
     NotifyCrowdControlCommand("Force Equipment")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
     equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
     equipmentChangeOriginalTrigger = inventory.aEquipShortcuts.TriggerShard
@@ -812,7 +824,7 @@ end
 function ForceEquipmentEnd()
     if not forceEquipmentActive then return end
     forceEquipmentActive = false
-    local interfaceHUD = FindFirstOf("PBInterfaceHUD")
+    local interfaceHUD = GetPlayerController().MyHUD
     if interfaceHUD:IsValid() then
         ExecuteInGameThread(function()
             interfaceHUD:DispShortcutMenu(true)
@@ -1170,7 +1182,7 @@ end)
 
 -- Toggle CC notifications with F1
 RegisterKeyBind(Key.F1, function()
-    ToggleDisplayNotifications()
+    if CanExecuteCommand() then ToggleDisplayNotifications() end
 end)
 
 -- Try to connect to CC periodically
@@ -1180,7 +1192,7 @@ LoopAsync(10000, function()
 end)
 
 -- Check effects used
-LoopAsync(50, function()
+LoopAsync(100, function()
     if not connected() then return false end
     
     local id, code, duration = getEffect()
@@ -1236,7 +1248,7 @@ LoopAsync(50, function()
 end)
 
 -- Check timed effect status
-LoopAsync(250, function()
+LoopAsync(1000, function()
     if next(timedEffects) == nil then return false end
     -- Check if commands can be used
     local success, result = pcall(CanExecuteCommand)
@@ -1252,7 +1264,7 @@ LoopAsync(250, function()
         if canExecute then
             if timedEffectsWerePaused then ccRespondTimed(entry["id"], 7, entry["duration"]) end
             
-            entry["duration"] = entry["duration"] - 250
+            entry["duration"] = entry["duration"] - 1000
             if entry["duration"] <= 0 then
                 -- Look if there is an extra function to check
                 local checkCode = "Can" .. entry["code"] .. "End"
@@ -1261,8 +1273,9 @@ LoopAsync(250, function()
                 if checkFunc ~= nil then
                     success, result = pcall(checkFunc)
                 else
-                    success, result = true
+                    success, result = true, true
                 end
+                
                 -- Execute end function if it exists
                 if success then
                     if result then

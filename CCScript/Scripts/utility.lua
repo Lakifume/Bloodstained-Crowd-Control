@@ -46,12 +46,12 @@ function GetPlayerCharacter()
     return GetGameInstance():GetPlayerCharacter(0)
 end
 
-function GetClassName(object)
-    return SplitString(object:GetFullName(), " ")[1]
+function GetPlayerController()
+    return GetGameInstance():GetLocalPlayerController()
 end
 
-function IsCharacterAlive(character)
-    return character.CharacterStatus.HitPoint > 0
+function GetClassName(object)
+    return SplitString(object:GetFullName(), " ")[1]
 end
 
 function GetCharacterHealthRatio(character)
@@ -101,7 +101,7 @@ function SpawnActorFromClass(classPath, location, rotation)
 end
 
 function SetPlayerInputEnabled(flag)
-    local playerController = UEHelpers.GetPlayerController()
+    local playerController = GetPlayerController()
     local controllerID = flag and 0 or 1
     gameplayStatics:SetPlayerControllerID(playerController, controllerID)
 end

@@ -37,6 +37,9 @@ shuffleControlsOriginalShortcut = nil
 shuffleControlsUnpausePreHook = nil
 shuffleControlsUnpausePostHook = nil
 
+useWitchTimeShouldStopEffect = false
+turboEnemiesShouldStopEffect = false
+
 goldRushMoneyGain = nil
 goldRushDamagePopupPreHook = nil
 goldRushDamagePopupPostHook = nil
