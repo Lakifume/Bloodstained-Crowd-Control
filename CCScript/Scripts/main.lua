@@ -9,6 +9,7 @@ function CanExecuteCommand()
     local player = GetPlayerCharacter()
     if not player:IsValid() then return false end
     if player.Killed then return false end 
+    if player.CurrentryWarpingByWarpRoom then return false end
     local interfaceHUD = GetPlayerController().MyHUD
     if not interfaceHUD:IsValid() then return false end
     if not interfaceHUD:GetGaugeWidget():IsValid() then return false end
@@ -534,6 +535,7 @@ function SummonRave()
             timer = timer + deltaSeconds*1000
             progress = timer%fullcycle
             color = mathLibrary:HSVToRGB(progress/fullcycle*360, 0.75, 1.0, 1.0)
+            if not postProcess:IsValid() then postProcess = FindFirstOf("PostProcessVolume") end
             if postProcess:IsValid() then postProcess.Settings.ColorGain = {X=color.R, Y=color.G, Z=color.B} end
         end)
         return false
