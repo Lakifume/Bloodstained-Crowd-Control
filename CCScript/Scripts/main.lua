@@ -525,7 +525,7 @@ function SummonRave()
     NotifyCrowdControlCommand("Summon Rave")
     local timer = 0
     local progress = 0
-    local fullcycle = 1500
+    local fullcycle = 1000
     local deltaSeconds = gameplayStatics:GetWorldDeltaSeconds(postProcess)
     postProcess.Settings.bOverride_ColorGain = 1
     -- Cycle through color gains
