@@ -288,6 +288,7 @@ function UseWitchTime()
     local rate = 0.25
     LoopAsync(1000, function()
         if useWitchTimeShouldStopEffect then return true end
+        if not CanExecuteCommand() then return false end
         ExecuteInGameThread(function()
             utility:PBCategorySlomo(1, 0, rate, player)
             utility:PBCategorySlomo(2, 0, rate, player)
@@ -321,6 +322,7 @@ function TurboEnemies()
     local rate = 2.0
     LoopAsync(1000, function()
         if turboEnemiesShouldStopEffect then return true end
+        if not CanExecuteCommand() then return false end
         ExecuteInGameThread(function()
             utility:PBCategorySlomo(1, 0, rate, player)
             utility:PBActorSlomo(player, 0, 1.0)
@@ -553,8 +555,10 @@ function SummonRaveEnd()
     summonRaveShouldStopEffect = true
     local postProcess = FindFirstOf("PostProcessVolume")
     if postProcess:IsValid() then
-        postProcess.Settings.bOverride_ColorGain = 0
-        postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0}
+        ExecuteInGameThread(function()
+            postProcess.Settings.bOverride_ColorGain = 0
+            postProcess.Settings.ColorGain = {X=1.0, Y=1.0, Z=1.0}
+        end)
     end
     EndTimedEffect("SummonRave")
 end
@@ -566,8 +570,10 @@ function SummonDarkness()
     if not postProcess:IsValid() then return false end
     summonDarknessActive = true
     NotifyCrowdControlCommand("Summon Darkness")
-    postProcess.Settings.bOverride_VignetteIntensity = 1
-    postProcess.Settings.VignetteIntensity = 5.0
+    ExecuteInGameThread(function()
+        postProcess.Settings.bOverride_VignetteIntensity = 1
+        postProcess.Settings.VignetteIntensity = 5.0
+    end)
     return true
 end
 
@@ -580,8 +586,10 @@ function SummonDarknessEnd()
     summonDarknessActive = false
     local postProcess = FindFirstOf("PostProcessVolume")
     if postProcess:IsValid() then
-        postProcess.Settings.bOverride_VignetteIntensity = 0
-        postProcess.Settings.VignetteIntensity = 0.0
+        ExecuteInGameThread(function()
+            postProcess.Settings.bOverride_VignetteIntensity = 0
+            postProcess.Settings.VignetteIntensity = 0.0
+        end)
     end
     EndTimedEffect("SummonDarkness")
 end
@@ -998,6 +1006,7 @@ function StartSaveRoomBoss()
     local bossPosX, bossPosZ = RelativeToAbsoluteLocation(630.0, 120.0)
     local bossOD = GetGameInstance().pCharacterManager:CreateCharacter(FName(bossID), "", {X=bossPosX, Z=bossPosZ}, {}, 1, "", nil, false)
     bossOD:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
+    bossOD.CharacterStatus.m_TemporaryMaxHP = bossOD.CharacterStatus:GetMaxHitPoint()*1/3
     bossOD.CharacterStatus:RecoverHitPoint()
     bossOD.Experience = 0
     player.m_SoundControlComponent:PlayBGM("BGM_siebel_battle", 0.0, 0)
@@ -1006,7 +1015,7 @@ function StartSaveRoomBoss()
     -- Watch the damage to despawn the boss before he truly dies
     local preId, postId
     preId, postId = RegisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", function()
-        if GetCharacterHealthRatio(bossOD) <= 1/3 then
+        if GetCharacterHealthRatio(bossOD) <= 0.5 then
             EndSaveRoomBoss(bossOD)
             UnregisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", preId, postId)
         end
