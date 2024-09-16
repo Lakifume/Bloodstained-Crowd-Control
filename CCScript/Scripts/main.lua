@@ -9,6 +9,7 @@ function CanExecuteCommand()
     local player = GetPlayerCharacter()
     if not player:IsValid() then return false end
     if player.Killed then return false end 
+    if player.Step:IsRollingForInvert() then return false end
     if player.CurrentryWarpingByWarpRoom then return false end
     local interfaceHUD = GetPlayerController().MyHUD
     if not interfaceHUD:IsValid() then return false end
@@ -36,82 +37,101 @@ end
 function PoisonPlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusPoisoned({}, {}) then return false end
-    NotifyCrowdControlCommand("Poison Player")
-    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Poison")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Poison Player")
+        player.Step:SetSpecialEffect(FName("Poison"))
+    end)
     return true
 end
 
 function CursePlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusCursed({}, {}) then return false end
-    NotifyCrowdControlCommand("Curse Player")
-    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Curse")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Curse Player")
+        player.Step:SetSpecialEffect(FName("Curse"))
+    end)
     return true
 end
 
 function PetrifyPlayer()
     local player = GetPlayerCharacter()
     if player:IsStatusStoned({}) then return false end
-    NotifyCrowdControlCommand("Petrify Player")
-    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Stone")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Petrify Player")
+        player.Step:SetSpecialEffect(FName("Stone"))
+    end)
     return true
 end
 
 function SlowPlayerDown()
     local player = GetPlayerCharacter()
     if player:IsStatusSlowed({}, {}) then return false end
-    NotifyCrowdControlCommand("Slow Player Down")
-    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("Slow")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Slow Player Down")
+        player.Step:SetSpecialEffect(FName("Slow"))
+    end)
     return true
 end
 
 function SlamPlayer()
     if heavenOrHellActive then return false end
     local player = GetPlayerCharacter()
+    if player:IsStatusStoned({}) then return false end
     if player.CharacterStatus.HitPoint <= 1 then return false end
     if not player.Step:CanUpdateNextHitTimer() then return false end
-    NotifyCrowdControlCommand("Slam Player")
-    ExecuteInGameThread(function() player:DirectDamageWithId(1.0, FName("N2008_BackStep")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Slam Player")
+        player:DirectDamageWithId(1.0, FName("N2008_BackStep"))
+    end)
     return true
 end
 
 function EmptyHealth()
     local player = GetPlayerCharacter()
     if player.CharacterStatus.HitPoint <= 1 then return false end
-    NotifyCrowdControlCommand("Empty Health")
-    ExecuteInGameThread(function() player.CharacterStatus:SetHitPointForce(1) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Empty Health")
+        player.CharacterStatus:SetHitPointForce(1)
+    end)
     return true
 end
 
 function EmptyMagic()
     local player = GetPlayerCharacter()
     if player.CharacterStatus.MagicPoint <= 1 then return false end
-    NotifyCrowdControlCommand("Empty Magic")
-    ExecuteInGameThread(function() player.CharacterStatus:SetMagicPointForce(1) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Empty Magic")
+        player.CharacterStatus:SetMagicPointForce(1)
+    end)
     return true
 end
 
 function RefillHealth()
     local player = GetPlayerCharacter()
     if GetCharacterHealthRatio(player) >= 1.0 then return false end
-    NotifyCrowdControlCommand("Refill Health")
-    ExecuteInGameThread(function() player.CharacterStatus:RecoverHitPoint() end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Refill Health")
+        player.CharacterStatus:RecoverHitPoint()
+    end)
     return true
 end
 
 function RefillMagic()
     local player = GetPlayerCharacter()
     if GetCharacterMagicRatio(player) >= 1.0 then return false end
-    NotifyCrowdControlCommand("Refill Magic")
-    ExecuteInGameThread(function() player.CharacterStatus:RecoverMagicPoint() end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Refill Magic")
+        player.CharacterStatus:RecoverMagicPoint()
+    end)
     return true
 end
 
 function ShuffleColors()
-    NotifyCrowdControlCommand("Shuffle Colors")
     local player = GetPlayerCharacter()
     -- Only shuffle colors and not haircuts to avoid crashes
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Shuffle Colors")
         for index = 1,6,1 do
             for subindex = 0,2,1 do
                 player:SetChromaWheelColorScheme(index, {R=math.random(), G=math.random(), B=math.random()}, subindex)
@@ -124,17 +144,19 @@ function ShuffleColors()
 end
 
 function FakeFlawlessWin()
-    NotifyCrowdControlCommand("Fake Flawless Win")
     local player = GetPlayerCharacter()
-    ExecuteInGameThread(function() player.Step:NoticeBossBattleNoDamageWin(nullName) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Fake Flawless Win")
+        player.Step:NoticeBossBattleNoDamageWin(nullName)
+    end)
     return true
 end
 
 function PlayDeathQuote()
-    NotifyCrowdControlCommand("Play Death Quote")
     local player = GetPlayerCharacter()
     local chosenVoice = RandomChoice(voicelist)
     print("Played quote: " .. chosenVoice)
+    NotifyCrowdControlCommand("Play Death Quote")
     PlayEnemySound(chosenVoice)
     return true
 end
@@ -198,8 +220,10 @@ end
 function FlipPlayer()
     if flipPlayerActive then return false end
     flipPlayerActive = true
-    NotifyCrowdControlCommand("Flip Player")
-    ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(true) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Flip Player")
+        utility:SetLeftAnalogMirrorFlag(true)
+    end)
     -- Switching rooms breaks it so enable it back
     flipPlayerRoomChangePreHook, flipPlayerRoomChangePostHook = RegisterHook("/Script/ProjectBlood.PBRoomVolume:OnRoomVolumeOverlapEnd", function()
         ExecuteInGameThread(function() utility:SetLeftAnalogMirrorFlag(true) end)
@@ -218,9 +242,7 @@ end
 function ShuffleControls()
     if shuffleControlsActive then return false end
     shuffleControlsActive = true
-    NotifyCrowdControlCommand("Shuffle Controls")
-    local player = GetPlayerCharacter()
-    local configManager = player:GetConfigManager()
+    local configManager = GetPlayerCharacter():GetConfigManager()
     shuffleControlsOriginalAttack = configManager.ConfigData:GetPhysKeyFromActionName(FName("Attack"))
     shuffleControlsOriginalBackstep = configManager.ConfigData:GetPhysKeyFromActionName(FName("Ability"))
     shuffleControlsOriginalJump = configManager.ConfigData:GetPhysKeyFromActionName(FName("Jump"))
@@ -244,6 +266,7 @@ function ShuffleControls()
     local currentDirectional = PickAndRemove(controlList)
     local currentEffective = PickAndRemove(controlList)
     local currentShortcut = PickAndRemove(controlList)
+    NotifyCrowdControlCommand("Shuffle Controls")
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(0, currentAttack)
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(1, currentBackstep)
     GetGameInstance().m_SystemSettings:BindToGamepad_NO_CHECK(2, currentJump)
@@ -283,9 +306,9 @@ function UseWitchTime()
     if turboEnemiesActive then return false end
     useWitchTimeActive = true
     useWitchTimeShouldStopEffect = false
-    NotifyCrowdControlCommand("Use Witch Time")
     local player = GetPlayerCharacter()
     local rate = 0.25
+    NotifyCrowdControlCommand("Use Witch Time")
     LoopAsync(1000, function()
         if useWitchTimeShouldStopEffect then return true end
         if not CanExecuteCommand() then return false end
@@ -317,9 +340,9 @@ function TurboEnemies()
     if useWitchTimeActive then return false end
     turboEnemiesActive = true
     turboEnemiesShouldStopEffect = false
-    NotifyCrowdControlCommand("Turbo Enemies")
     local player = GetPlayerCharacter()
     local rate = 2.0
+    NotifyCrowdControlCommand("Turbo Enemies")
     LoopAsync(1000, function()
         if turboEnemiesShouldStopEffect then return true end
         if not CanExecuteCommand() then return false end
@@ -361,8 +384,8 @@ end
 function CriticalMode()
     if criticalModeActive then return false end
     criticalModeActive = true
-    NotifyCrowdControlCommand("Critical Mode")
     local player = GetPlayerCharacter()
+    NotifyCrowdControlCommand("Critical Mode")
     ModifyEquipSpecialAttribute({8}, 999.0, false)
     player:SetEquipSpecialAttribute(107, -999.0)
     player:SetEquipSpecialAttribute(108, -999.0)
@@ -419,9 +442,10 @@ end
 
 function UseWaystone()
     if GetGameInstance():IsBossBattleNow() then return false end
-    NotifyCrowdControlCommand("Use Waystone")
-    local player = GetPlayerCharacter()
-    ExecuteInGameThread(function() player.Step:SetSpecialEffect(FName("WayStone")) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Use Waystone")
+        GetPlayerCharacter().Step:SetSpecialEffect(FName("WayStone"))
+    end)
     return true
 end
 
@@ -476,8 +500,10 @@ function RewindTime()
     elseif IsValidRewindRoom(previousRoom1) then
         chosenRoom = previousRoom1
     else return false end
-    NotifyCrowdControlCommand("Rewind Time")
-    ExecuteInGameThread(function() GetGameInstance().pRoomManager:Warp(chosenRoom, false, false, nullName, {}) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Rewind Time")
+        GetGameInstance().pRoomManager:Warp(chosenRoom, false, false, nullName, {})
+    end)
     return true
 end
 
@@ -495,12 +521,12 @@ function SummonAmbush()
     local playerLocation = player:K2_GetActorLocation()
     local playerScreenPosition = player:GetScreenPosition()
     if playerScreenPosition.X < 1/3 or playerScreenPosition.X > 2/3 then return false end
-    NotifyCrowdControlCommand("Summon Ambush")
     local chosenEnemy = RandomChoice(enemylist)
     local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
     print("Spawned enemy: " .. chosenEnemy)
     -- Spawn 2 of the same random enemy with their levels scaling with map completion
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Summon Ambush")
         local enemy1 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X + 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
         local enemy2 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
         if not enemy1:IsValid() or not enemy2:IsValid() then return false end
@@ -524,11 +550,11 @@ function SummonRave()
     if not postProcess:IsValid() then return false end
     summonRaveActive = true
     summonRaveShouldStopEffect = false
-    NotifyCrowdControlCommand("Summon Rave")
     local timer = 0
     local progress = 0
     local fullcycle = 1000
     local deltaSeconds = gameplayStatics:GetWorldDeltaSeconds(postProcess)
+    NotifyCrowdControlCommand("Summon Rave")
     postProcess.Settings.bOverride_ColorGain = 1
     -- Cycle through color gains
     LoopAsync(math.floor(deltaSeconds*1000), function()
@@ -569,8 +595,8 @@ function SummonDarkness()
     local postProcess = FindFirstOf("PostProcessVolume")
     if not postProcess:IsValid() then return false end
     summonDarknessActive = true
-    NotifyCrowdControlCommand("Summon Darkness")
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Summon Darkness")
         postProcess.Settings.bOverride_VignetteIntensity = 1
         postProcess.Settings.VignetteIntensity = 5.0
     end)
@@ -596,8 +622,10 @@ end
 
 function TriggerEarthquake(duration)
     local player = GetPlayerCharacter()
-    NotifyCrowdControlCommand("Trigger Earthquake")
-    ExecuteInGameThread(function() player.Step:CameraShake(duration/1000, 0.15, 60.0, 0.3, 40.0, 0.0, 0.0, player.criticalForceFeedback, nullName, false, nullName) end)
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Trigger Earthquake")
+        player.Step:CameraShake(duration/1000, 0.15, 60.0, 0.3, 40.0, 0.0, 0.0, player.criticalForceFeedback, nullName, false, nullName)
+    end)
     return true
 end
 
@@ -605,10 +633,10 @@ function ForceInvert()
     if forceInvertActive then return false end
     if noSkillShardsActive then return false end
     forceInvertActive = true
-    NotifyCrowdControlCommand("Force Invert")
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
-    ExecuteInGameThread(function() 
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Force Invert")
         if not eventUtility:IsInvertedByPlayerCharacter(0) then player.Step:BeginInvert() end
         inventory:SetSkillOnOff(FName("Invert"), false)
     end)
@@ -638,8 +666,8 @@ function NoSkillShards()
     if noSkillShardsActive then return false end
     if forceInvertActive then return false end
     noSkillShardsActive = true
-    NotifyCrowdControlCommand("No Skill Shards")
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("No Skill Shards")
         if eventUtility:IsInvertedByPlayerCharacter(0) then GetPlayerCharacter().Step:BeginInvert() end
         SetAllSkillOnOff(false)
     end)
@@ -674,9 +702,7 @@ function WeaponsOnly()
     if forceEquipmentActive then return false end
     if IsShardWindowOpen() then return false end
     weaponsOnlyActive = true
-    NotifyCrowdControlCommand("Weapons Only")
-    local player = GetPlayerCharacter()
-    local inventory = player.CharacterInventory
+    local inventory = GetPlayerCharacter().CharacterInventory
     local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalTrigger = inventory.aEquipShortcuts.TriggerShard
     equipmentChangeOriginalEffective = inventory.aEquipShortcuts.EffectiveShard
@@ -684,6 +710,7 @@ function WeaponsOnly()
     equipmentChangeOriginalEnchant = inventory.aEquipShortcuts.EnchantShard
     equipmentChangeOriginalFamiliar = inventory.aEquipShortcuts.FamiliarShard
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Weapons Only")
         interfaceHUD:DispShortcutMenu(true)
         UnequipPlayerShards()
     end)
@@ -728,13 +755,12 @@ function ShardsOnly()
     if forceEquipmentActive then return false end
     if IsShardWindowOpen() then return false end
     shardsOnlyActive = true
-    NotifyCrowdControlCommand("Shards Only")
-    local player = GetPlayerCharacter()
-    local inventory = player.CharacterInventory
+    local inventory = GetPlayerCharacter().CharacterInventory
     local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
     equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Shards Only")
         interfaceHUD:DispShortcutMenu(true)
         UnequipPlayerWeapon()
     end)
@@ -779,9 +805,7 @@ function ForceEquipment()
     if shardsOnlyActive then return false end
     if IsShardWindowOpen() then return false end
     forceEquipmentActive = true
-    NotifyCrowdControlCommand("Force Equipment")
-    local player = GetPlayerCharacter()
-    local inventory = player.CharacterInventory
+    local inventory = GetPlayerCharacter().CharacterInventory
     local interfaceHUD = GetPlayerController().MyHUD
     equipmentChangeOriginalWeapon = inventory.aEquipShortcuts.weapon
     equipmentChangeOriginalBullet = inventory.aEquipShortcuts.Bullet
@@ -805,6 +829,7 @@ function ForceEquipment()
     print("Forced enchant shard: " .. currentEnchantShard:ToString())
     print("Forced familiar shard: " .. currentFamiliarShard:ToString())
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Force Equipment")
         interfaceHUD:DispShortcutMenu(true)
         EquipPlayerWeapon(currentWeapon, currentBullet)
         EquipPlayerShards(currentTriggerShard, currentEffectiveShard, currentDirectionalShard, currentEnchantShard, currentFamiliarShard)
@@ -902,9 +927,9 @@ end
 function HeavenOrHell()
     if heavenOrHellActive then return false end
     heavenOrHellActive = true
-    NotifyCrowdControlCommand("Heaven or Hell")
     local player = GetPlayerCharacter()
     local isInvincible = math.random() < 0.5
+    NotifyCrowdControlCommand("Heaven or Hell")
     ModifyEquipSpecialAttribute({62, 63, 64, 65, 66, 67, 68, 69}, isInvincible and 100.0 or -100.0, false)
     heavenOrHellDamageEventPreHook, heavenOrHellDamageEventPostHook = RegisterHook("/Game/Core/Character/Common/Template/Step_Root.Step_Root_C:EnterDamaged1Event", function(self)
         if not isInvincible and GetClassName(self:get()) == GetClassName(player.Step) then
@@ -926,8 +951,8 @@ function ReturnBooks()
     local player = GetPlayerCharacter()
     local inventory = player.CharacterInventory
     if #inventory.myBorrowedBooks < 1 then return false end
-    NotifyCrowdControlCommand("Return Books")
     ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Return Books")
         for index = 1,#inventory.myBorrowedBooks,1 do
             inventory:ReturnTheBook(inventory.myBorrowedBooks[1].ID)
         end
@@ -940,8 +965,10 @@ function CallTheLibrary()
     -- If OD has been defeated then simply warp to library
     if GetGameInstance():IsCompletedBoss(FName("N2012")) then
         if GetGameInstance():IsBossBattleNow() then return false end
-        NotifyCrowdControlCommand("Call The Library")
-        ExecuteInGameThread(function() GetGameInstance().pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {}) end)
+        ExecuteInGameThread(function()
+            NotifyCrowdControlCommand("Call The Library")
+            GetGameInstance().pRoomManager:Warp(FName("m07LIB_009"), false, false, nullName, {})
+        end)
         return true
     end
     -- Otherwise put OD on standby in the next save room entered
@@ -1009,15 +1036,28 @@ function StartSaveRoomBoss()
     bossOD.CharacterStatus.m_TemporaryMaxHP = bossOD.CharacterStatus:GetMaxHitPoint()*1/3
     bossOD.CharacterStatus:RecoverHitPoint()
     bossOD.Experience = 0
-    player.m_SoundControlComponent:PlayBGM("BGM_siebel_battle", 0.0, 0)
-    player.m_SoundControlComponent:CharaGroupLoad(bossOD, "VOICE", bossID)
-    player.m_SoundControlComponent:CharaGroupLoad(bossOD, "ENEMY", bossID)
+    bossOD:SetActorHiddenInGame(true)
+    bossOD:UtilityPause(true, 0)
+    -- Only enable the boss once all doors are closed
+    local orlokDoorPreId, orlokDoorPostId
+    orlokDoorPreId, orlokDoorPostId = RegisterHook("/Game/Core/Environment/Gimmick/NewGimmicks/BossDoorBase/PBBossDoor_BP.PBBossDoor_BP_C:OnEnterState", function(self, param1, param2)
+        if param1:get() == 2 and param2:get() == 3 then
+            bossOD:UtilityPause(false, 0)
+            bossOD:SetActorHiddenInGame(false)
+            bossOD.Step:StartMist(0.0, true)
+            bossOD.Step:EndMist(1.0)
+            player.m_SoundControlComponent:PlayBGM("BGM_siebel_battle", 0.0, 0)
+            player.m_SoundControlComponent:CharaGroupLoad(bossOD, "VOICE", bossID)
+            player.m_SoundControlComponent:CharaGroupLoad(bossOD, "ENEMY", bossID)
+            UnregisterHook("/Game/Core/Environment/Gimmick/NewGimmicks/BossDoorBase/PBBossDoor_BP.PBBossDoor_BP_C:OnEnterState", orlokDoorPreId, orlokDoorPostId)
+        end
+    end)
     -- Watch the damage to despawn the boss before he truly dies
-    local preId, postId
-    preId, postId = RegisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", function()
+    local orlokDamagePreId, orlokDamagePostId
+    orlokDamagePreId, orlokDamagePostId = RegisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", function()
         if GetCharacterHealthRatio(bossOD) <= 0.5 then
             EndSaveRoomBoss(bossOD)
-            UnregisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", preId, postId)
+            UnregisterHook("/Game/Core/Character/N2012/Data/Step_N2012.Step_N2012_C:OnDamaged", orlokDamagePreId, orlokDamagePostId)
         end
     end)
 end
