@@ -62,6 +62,10 @@ function GetCharacterMagicRatio(character)
     return character.CharacterStatus.MagicPoint/character.CharacterStatus:GetMaxMagicPoint()
 end
 
+function CompletionToEnemyLevel(completion)
+    return RoundFloat(Lerp(1, 50, InvertSquircle(completion/100, 1.25)))
+end
+
 function GetCurrentRoomProperties()
     local datatableRow = {}
     local datatable = GetGameInstance().pMapManager.RoomMasterTable
@@ -106,12 +110,24 @@ function SetPlayerInputEnabled(flag)
     gameplayStatics:SetPlayerControllerID(playerController, controllerID)
 end
 
+function RoundFloat(value)
+    return math.floor(value + 0.5)
+end
+
 function ClampValue(value, minimum, maximum)
     return math.min(math.max(minimum, value), maximum)
 end
 
 function Lerp(minimum, maximum, alpha)
     return minimum + (maximum - minimum)*alpha
+end
+
+function Squircle(value, exponent)
+    return -(1-value^exponent)^(1/exponent)+1
+end
+
+function InvertSquircle(value, exponent)
+    return (1-(-value+1)^exponent)^(1/exponent)
 end
 
 function SplitString(inString, separator)

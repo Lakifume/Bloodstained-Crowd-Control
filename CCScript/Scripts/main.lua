@@ -182,7 +182,7 @@ function GrowPlayer()
     if growPlayerActive then return false end
     if shrinkPlayerActive then return false end
     growPlayerActive = true
-    sizeChangeCurrentModifier = 1.5
+    sizeChangeCurrentModifier = 1.7
     NotifyCrowdControlCommand("Grow Player")
     SetPlayerScale(false)
     return true
@@ -304,11 +304,22 @@ end
 function UseWitchTime()
     if useWitchTimeActive then return false end
     if turboEnemiesActive then return false end
+    local postProcess = FindFirstOf("PostProcessVolume")
+    if not postProcess:IsValid() then return false end
     useWitchTimeActive = true
     useWitchTimeShouldStopEffect = false
     local player = GetPlayerCharacter()
-    local rate = 0.25
-    NotifyCrowdControlCommand("Use Witch Time")
+    local rate = 0.2
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Use Witch Time")
+        postProcess.Settings.bOverride_SceneFringeIntensity = 1
+        postProcess.Settings.SceneFringeIntensity = 5.0
+        utility:PBCategorySlomo(1, 0, rate, player)
+        utility:PBCategorySlomo(2, 0, rate, player)
+        utility:PBCategorySlomo(3, 0, rate, player)
+        utility:PBCategorySlomo(4, 0, rate, player)
+        utility:PBActorSlomo(player, 0, 1.0)
+    end)
     LoopAsync(1000, function()
         if useWitchTimeShouldStopEffect then return true end
         if not CanExecuteCommand() then return false end
@@ -324,14 +335,23 @@ function UseWitchTime()
     return true
 end
 
+function CanWitchTimeEnd()
+    return FindFirstOf("PostProcessVolume"):IsValid()
+end
+
 function UseWitchTimeEnd()
     if not useWitchTimeActive then return end
     useWitchTimeActive = false
     useWitchTimeShouldStopEffect = true
     local player = GetPlayerCharacter()
-    if player:IsValid() then
-        ExecuteInGameThread(function() utility:PBCategorySlomo(7, 0, 1.0, player) end)
-    end
+    local postProcess = FindFirstOf("PostProcessVolume")
+    ExecuteInGameThread(function()
+        if player:IsValid() then utility:PBCategorySlomo(7, 0, 1.0, player) end
+        if postProcess:IsValid() then
+            postProcess.Settings.bOverride_SceneFringeIntensity = 0
+            postProcess.Settings.SceneFringeIntensity = 0.0
+        end
+    end)
     EndTimedEffect("UseWitchTime")
 end
 
@@ -342,7 +362,11 @@ function TurboEnemies()
     turboEnemiesShouldStopEffect = false
     local player = GetPlayerCharacter()
     local rate = 2.0
-    NotifyCrowdControlCommand("Turbo Enemies")
+    ExecuteInGameThread(function()
+        NotifyCrowdControlCommand("Turbo Enemies")
+        utility:PBCategorySlomo(1, 0, rate, player)
+        utility:PBActorSlomo(player, 0, 1.0)
+    end)
     LoopAsync(1000, function()
         if turboEnemiesShouldStopEffect then return true end
         if not CanExecuteCommand() then return false end
@@ -475,7 +499,8 @@ function UseRosario()
             -- All bosses found will be dealt 15% of health
             for index = 1,#enemiesToDamage,1 do
                 local enemy = enemiesToDamage[index]
-                if enemy:IsValid() then enemy:DirectDamage(math.floor(enemy.CharacterStatus:GetMaxHitPoint()*0.15)) end
+                local damageRatio = enemy.Tags[1] == FName("CC") and 0.0725 or 0.15
+                if enemy:IsValid() then enemy:DirectDamage(math.floor(enemy.CharacterStatus:GetMaxHitPoint()*damageRatio)) end
             end
             ScreenFlash(0.3)
         end)
@@ -522,8 +547,8 @@ function SummonAmbush()
     local playerScreenPosition = player:GetScreenPosition()
     if playerScreenPosition.X < 1/3 or playerScreenPosition.X > 2/3 then return false end
     local chosenEnemy = RandomChoice(enemylist)
-    local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
-    print("Spawned enemy: " .. chosenEnemy)
+    local enemyLevel = CompletionToEnemyLevel(GetGameInstance().pMapManager:GetRoomTraverseRate({}))
+    print("Spawned enemy: " .. chosenEnemy .. " Lv " .. enemyLevel)
     -- Spawn 2 of the same random enemy with their levels scaling with map completion
     ExecuteInGameThread(function()
         NotifyCrowdControlCommand("Summon Ambush")
@@ -531,11 +556,11 @@ function SummonAmbush()
         local enemy2 = GetGameInstance().pCharacterManager:CreateCharacter(FName(chosenEnemy), "", {X = playerLocation.X - 420, Y = playerLocation.Y, Z = playerLocation.Z}, {}, 1, "", nil, false)
         if not enemy1:IsValid() or not enemy2:IsValid() then return false end
         enemy1:SetCharacterWorldRotation(180.0, 0.0)
-        enemy1:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
+        enemy1:SetEnemyLevel(enemyLevel)
         enemy1.CharacterStatus:RecoverHitPoint()
         enemy1.Experience = 0
         enemy1.DropID = nullName
-        enemy2:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
+        enemy2:SetEnemyLevel(enemyLevel)
         enemy2.CharacterStatus:RecoverHitPoint()
         enemy2.Experience = 0
         enemy2.DropID = nullName
@@ -994,7 +1019,6 @@ end
 function StartSaveRoomBoss()
     local bossID = "N2012"
     local player = GetPlayerCharacter()
-    local playerLocation = player:K2_GetActorLocation()
     -- Turn off room transitions
     GetGameInstance().pRoomManager:SetDisableRoomChangeByCameraOut(true)
     -- Turn off saving
@@ -1029,15 +1053,16 @@ function StartSaveRoomBoss()
     rightDoor.YScale = 2
     rightDoor.Tags[1] = FName("CC")
     -- Spawn OD
-    local enemyLevel = GetGameInstance().pMapManager:GetRoomTraverseRate({})//2
-    local bossPosX, bossPosZ = RelativeToAbsoluteLocation(630.0, 120.0)
+    local enemyLevel = CompletionToEnemyLevel(GetGameInstance().pMapManager:GetRoomTraverseRate({}))
+    local bossPosX, bossPosZ = RelativeToAbsoluteLocation(630.0, 150.0)
     local bossOD = GetGameInstance().pCharacterManager:CreateCharacter(FName(bossID), "", {X=bossPosX, Z=bossPosZ}, {}, 1, "", nil, false)
-    bossOD:SetEnemyLevel(ClampValue(enemyLevel, 1, 50))
+    bossOD:SetEnemyLevel(enemyLevel)
     bossOD.CharacterStatus.m_TemporaryMaxHP = bossOD.CharacterStatus:GetMaxHitPoint()*1/3
     bossOD.CharacterStatus:RecoverHitPoint()
     bossOD.Experience = 0
     bossOD:SetActorHiddenInGame(true)
     bossOD:UtilityPause(true, 0)
+    bossOD.Tags[1] = FName("CC")
     -- Only enable the boss once all doors are closed
     local orlokDoorPreId, orlokDoorPostId
     orlokDoorPreId, orlokDoorPostId = RegisterHook("/Game/Core/Environment/Gimmick/NewGimmicks/BossDoorBase/PBBossDoor_BP.PBBossDoor_BP_C:OnEnterState", function(self, param1, param2)
