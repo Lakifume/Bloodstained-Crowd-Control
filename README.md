@@ -40,5 +40,5 @@ For best results it is recommended to combine this with True Randomization: http
 | Shards Only          | Unequip the player's current weapon, forcing them to use shards instead                                           | 8     | 30s      | 4        |
 | Force Equipment      | Force a random set of equipment based on what the player has in their inventory                                   | 8     | 60s      | 4        |
 | Heaven or Hell       | May make the player invincible… or may put them in one-hit KO mode                                                | 24    | 60s      | -        |
-| Return Books         | This is a library, not a bookshop                                                                                 | 40    | ---      | -        |
+| Return Books         | This is a library, not a bookshop                                                                                 | 32    | ---      | -        |
 | Call The Library     | Report Miriam to Orlok Dracule so that he can meet with her soon to talk about the tomes she did not return       | 80    | ---      | -        |
