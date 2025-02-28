@@ -54,7 +54,7 @@ public class Bloodstained : SimpleTCPPack
         new("Shards Only",          "ShardsOnly")          {Description = "Unequip the player's current weapon, forcing them to use shards instead",                                     Category =   "Timed", Price =  8, Duration = 30},
         new("Force Equipment",      "ForceEquipment")      {Description = "Force a random set of equipment based on what the player has in their inventory",                             Category =   "Timed", Price =  8, Duration = 60},
         new("Heaven or Hell",       "HeavenOrHell")        {Description = "May make the player invincible… or may put them in one-hit KO mode",                                          Category =   "Timed", Price = 24, Duration = 60},
-        new("Return Books",         "ReturnBooks")         {Description = "This is a library, not a bookshop",                                                                           Category = "Instant", Price = 40},
+        new("Return Books",         "ReturnBooks")         {Description = "This is a library, not a bookshop",                                                                           Category = "Instant", Price = 32},
         new("Call The Library",     "CallTheLibrary")      {Description = "Report Miriam to Orlok Dracule so that he can meet with her soon to talk about the tomes she did not return", Category = "Instant", Price = 80}
     };
 }
