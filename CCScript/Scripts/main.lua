@@ -335,7 +335,7 @@ function UseWitchTime()
     return true
 end
 
-function CanWitchTimeEnd()
+function CanUseWitchTimeEnd()
     return FindFirstOf("PostProcessVolume"):IsValid()
 end
 
