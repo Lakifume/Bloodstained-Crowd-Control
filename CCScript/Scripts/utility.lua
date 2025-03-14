@@ -62,6 +62,10 @@ function GetCharacterMagicRatio(character)
     return character.CharacterStatus.MagicPoint/character.CharacterStatus:GetMaxMagicPoint()
 end
 
+function CompletionToCoinModifier(completion)
+    return Lerp(10, 1, InvertSquircle(completion/100, 1.25))
+end
+
 function CompletionToEnemyLevel(completion)
     return RoundFloat(Lerp(1, 50, InvertSquircle(completion/100, 1.25)))
 end
