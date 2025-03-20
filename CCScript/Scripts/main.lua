@@ -499,7 +499,8 @@ function UseRosario()
             -- All bosses found will be dealt 15% of health
             for index = 1,#enemiesToDamage,1 do
                 local enemy = enemiesToDamage[index]
-                if enemy:IsValid() then enemy:DirectDamage(math.floor(enemy.CharacterStatus:GetMaxHitPoint()*0.15)) end
+                local damageRatio = enemy.Tags[1] == FName("CC") and 0.1 or 0.15
+                if enemy:IsValid() then enemy:DirectDamage(math.floor(enemy.CharacterStatus:GetMaxHitPoint()*damageRatio)) end
             end
             ScreenFlash(0.3)
         end)
