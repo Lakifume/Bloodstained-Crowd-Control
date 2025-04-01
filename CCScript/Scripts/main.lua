@@ -528,6 +528,7 @@ function RewindTime()
     ExecuteInGameThread(function()
         NotifyCrowdControlCommand("Rewind Time")
         GetGameInstance().pRoomManager:Warp(chosenRoom, false, false, nullName, {})
+        ResetRoomHistory()
     end)
     return true
 end
